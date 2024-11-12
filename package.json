@@ -1,0 +1,55 @@
+{
+  "name": "jupytext-paired",
+  "displayName": "Jupytext Paired Notebooks",
+  "description": "Support for paired Jupytext files.",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Notebooks"
+  ],
+  "keywords": [
+    "jupyter",
+    "jupytext",
+    "notebooks"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marius311/jupytext-paired-vscode.git"
+  },
+  "icon": "icon.png",
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Jupytext Paired Notebooks",
+      "properties": {
+        "jupytext-paired.jupytextCommand": {
+          "type": "string",
+          "default": "jupytext",
+          "description": "The command which runs the Jupytext CLI. Can be an absolute path or a command available in the user $PATH."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.95.0",
+    "@types/mocha": "^10.0.9",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^8.10.0",
+    "@typescript-eslint/parser": "^8.7.0",
+    "eslint": "^9.13.0",
+    "typescript": "^5.6.3",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1"
+  }
+}
