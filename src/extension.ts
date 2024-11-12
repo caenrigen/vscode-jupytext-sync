@@ -36,8 +36,18 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate() { }
 
 
+const EXTENSION_FORMATS = [
+	'.ipynb', '.md', '.markdown', '.Rmd', '.py', '.coco', '.R', '.r', '.jl', 
+	'.cpp', '.ss', '.clj', '.scm', '.sh', '.ps1', '.q', '.m', '.wolfram',
+	 '.pro', '.js', '.ts', '.scala', '.rs', '.robot', '.resource', '.cs', 
+	 '.fsx', '.fs', '.sos', '.java', '.groovy', '.sage', '.ml', '.hs', '.tcl', 
+	 '.mac', '.gp', '.do', '.sas', '.xsh', '.lua', '.go', '.qmd', '.myst', 
+	 '.mystnb', '.mnb', '.auto'
+];
+
 function _isPossibleNotebookFile(fileName: string): boolean {
-	return /\.(ipynb|jl|py)$/.test(fileName);
+	const ext = path.extname(fileName);
+	return EXTENSION_FORMATS.includes(ext);
 }
 
 async function _runSync(fileName: string) {
