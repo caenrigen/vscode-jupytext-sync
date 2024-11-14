@@ -2,7 +2,7 @@
   "name": "jupytext-paired",
   "displayName": "Jupytext Paired Notebooks",
   "description": "Support for paired Jupytext files.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -29,9 +29,21 @@
           "type": "string",
           "default": "jupytext",
           "description": "The command which runs the Jupytext CLI. Can be an absolute path or a command available in the user $PATH."
+        },
+        "jupytext-paired.defaultFormat": {
+          "type": "string",
+          "enum": ["hydrogen", "light", "markdown", "myst", "nomarker", "pandoc", "percent", "quarto", "rmarkdown", "spin", "sphinx"],
+          "default": "light",
+          "description": "The default format to suggest when pairing a notebook with a script."
         }
       }
-    }
+    },
+    "commands": [
+      {
+        "command": "jupytext-paired.pairFile",
+        "title": "Jupytext: Pair current notebook with script(s)"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
