@@ -1,12 +1,12 @@
 {
   "name": "jupytext-sync",
-  "displayName": "Jupytext Paired Jupyter Notebooks",
-  "description": "Auto sync paired Jupyter notebooks via Jupytext",
+  "displayName": "Jupytext Sync",
+  "description": "Pair and Auto Sync Jupyter Notebooks via Jupytext",
   "version": "1.0.0",
   "engines": {
     "vscode": "^1.95.0"
   },
-  "license": "BSD-3-Clause",
+  "license": "MIT",
   "categories": [
     "Notebooks",
     "Data Science",
@@ -22,7 +22,18 @@
     "notebook",
     "notebooks",
     "synced",
-    "paired"
+    "paired",
+    "markdown",
+    "myst",
+    "sphinx",
+    "quarto",
+    "pandoc",
+    "rmarkdown",
+    "hydrogen",
+    "light",
+    "nomarker",
+    "percent",
+    "spin"
   ],
   "publisher": "caenrigen",
   "homepage": "https://github.com/caenrigen/vscode-jupytext-sync",
@@ -40,48 +51,301 @@
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
-      "title": "Jupytext Paired Jupyter Notebooks",
+      "title": "Jupytext Sync",
       "properties": {
-        "jupytext-paired.jupytextCommand": {
+        "jupytextSync.pythonExecutable": {
           "type": "string",
-          "default": "jupytext",
-          "description": "The command which runs the Jupytext CLI. Can be an absolute path or a command available in the user $PATH."
+          "default": "",
+          "markdownDescription": "The path to the Python executable used to invoke `jupytext`.\n\nCan be, e.g., `python3` if you want to use the `python3` from your `$PATH`. You might have to launch VSCode from terminal in order to be able to use the python of your currently active virtual environment.\n\nIf not set, the Python interpreter configured in the [MS Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) will be used. You can configure it by invoking the [Python: Select Interpreter](command:python.setInterpreter) command.",
+          "order": 0
         },
-        "jupytext-paired.defaultFormat": {
-          "type": "string",
-          "enum": [
-            "hydrogen",
-            "light",
-            "markdown",
-            "myst",
-            "nomarker",
-            "pandoc",
-            "percent",
-            "quarto",
-            "rmarkdown",
-            "spin",
-            "sphinx"
-          ],
-          "default": "light",
-          "description": "The default format to suggest when pairing a notebook with a script."
+        "jupytextSync.syncDocuments": {
+          "type": "object",
+          "default": {
+            "onNotebookDocumentOpen": false,
+            "onNotebookDocumentSave": true,
+            "onNotebookDocumentClose": false,
+            "onTextDocumentOpen": false,
+            "onTextDocumentSave": true,
+            "onTextDocumentClose": false
+          },
+          "properties": {
+            "onNotebookDocumentOpen": {
+              "type": "boolean",
+              "description": "Sync paired files when opening a notebook document"
+            },
+            "onNotebookDocumentSave": {
+              "type": "boolean",
+              "description": "Sync paired files when saving a notebook document"
+            },
+            "onNotebookDocumentClose": {
+              "type": "boolean",
+              "description": "Sync paired files when closing a notebook document"
+            },
+            "onTextDocumentOpen": {
+              "type": "boolean",
+              "description": "Sync paired files when opening a supported text document"
+            },
+            "onTextDocumentSave": {
+              "type": "boolean",
+              "description": "Sync paired files when saving a supported text document"
+            },
+            "onTextDocumentClose": {
+              "type": "boolean",
+              "description": "Sync paired files when closing a supported text document"
+            }
+          },
+          "additionalProperties": false,
+          "markdownDescription": "Controls on which events to attempt to `jupytext --sync` previously paired documents (in the text/notebook editor).\n\nNote that this will apply even if the pairing has been performed externally, e.g., manually running `jupytext --set-formats ...` in the terminal, and the pairing metadata has been saved in the text document.",
+          "order": 1
+        },
+        "jupytextSync.defaultFormats": {
+          "type": "object",
+          "uniqueKeys": true,
+          "additionalProperties": {
+            "type": "string"
+          },
+          "additionalItems": {
+            "type": "string"
+          },
+          "default": {
+            "default": "ipynb,${ext}:percent",
+            ".ipynb": "ipynb,py:percent",
+            ".md": "ipynb,md:markdown",
+            ".markdown": "ipynb,markdown:markdown",
+            ".Rmd": "default",
+            ".py": "default",
+            ".coco": "default",
+            ".R": "default",
+            ".r": "default",
+            ".jl": "default",
+            ".cpp": "default",
+            ".ss": "default",
+            ".clj": "default",
+            ".scm": "default",
+            ".sh": "default",
+            ".ps1": "default",
+            ".q": "default",
+            ".m": "default",
+            ".wolfram": "default",
+            ".pro": "default",
+            ".js": "default",
+            ".ts": "default",
+            ".scala": "default",
+            ".rs": "default",
+            ".robot": "default",
+            ".resource": "default",
+            ".cs": "default",
+            ".fsx": "default",
+            ".fs": "default",
+            ".sos": "default",
+            ".java": "default",
+            ".groovy": "default",
+            ".sage": "default",
+            ".ml": "default",
+            ".hs": "default",
+            ".tcl": "default",
+            ".mac": "default",
+            ".gp": "default",
+            ".do": "default",
+            ".sas": "default",
+            ".xsh": "default",
+            ".lgt": "default",
+            ".logtalk": "default",
+            ".lua": "default",
+            ".go": "default",
+            ".qmd": "default",
+            ".myst": "default",
+            ".mystnb": "default",
+            ".mnb": "default"
+          },
+          "markdownDescription": "Default suggested pairing file formats per file extension.\nYou will be given the chance to edit it in the command palette when you invoke the pairing command.\nThe pairing command and the sync will be enabled only for file extensions supported by the jupytext itself.\nThe main text file formats supported by jupytext are: `percent`, `hydrogen`, `light`, `nomarker`, `markdown`, `myst`, `rmarkdown`, `spin`, `quarto`, `pandoc` and `sphinx`.\nYou can set the **Value** of any extension to `default` to be suggested the format specified by the `default` **Key**. `${ext}` will be replaced with the corresponding file extension (without the `.`).",
+          "title": "Default pairing file formats",
+          "order": 4
+        },
+        "jupytextSync.enabledMenus": {
+          "type": "object",
+          "order": 3,
+          "additionalProperties": false,
+          "default": {
+            "explorerContext": true,
+            "editorContext": true,
+            "editorTitle": true,
+            "editorTitleContext": true,
+            "notebookToolbar": true,
+            "notebookToolbarInsertRaw": true,
+            "notebookToolbarToRaw": true
+          },
+          "properties": {
+            "explorerContext": {
+              "type": "boolean",
+              "description": "Enable the Pair via Jupytext command in the Explorer context menu"
+            },
+            "editorContext": {
+              "type": "boolean",
+              "description": "Enable the Pair via Jupytext command in the Editor context menu"
+            },
+            "editorTitle": {
+              "type": "boolean",
+              "description": "Enable the Pair via Jupytext command in the Editor title menu"
+            },
+            "editorTitleContext": {
+              "type": "boolean",
+              "description": "Enable the Pair via Jupytext command in the Editor title context menu"
+            },
+            "notebookToolbar": {
+              "type": "boolean",
+              "description": "Enable the Pair via Jupytext command in the Notebook toolbar"
+            },
+            "notebookToolbarInsertRaw": {
+              "type": "boolean",
+              "description": "Enable the Insert Raw Cell command in the Notebook toolbar"
+            },
+            "notebookToolbarToRaw": {
+              "type": "boolean",
+              "description": "Enable the To Raw Cell command in the Notebook toolbar"
+            }
+          },
+          "markdownDescription": "Enable or disable Jupytext menus and buttons"
         }
       }
     },
     "commands": [
       {
-        "command": "jupytext-sync.pairFile",
-        "title": "Jupytext: Pair file with script(s)"
+        "command": "jupytextSync.setFormats",
+        "title": "Pair via Jupytext",
+        "shortTitle": "Pair",
+        "category": "Jupytext",
+        "icon": "$(notebook-open-as-text)"
+      },
+      {
+        "command": "jupytextSync.cell.insertRawCodeCellBelowAndFocusContainer",
+        "title": "Insert Raw Code Cell Below and Focus Container",
+        "shortTitle": "Raw",
+        "category": "Jupytext",
+        "icon": "$(add)"
+      },
+      {
+        "command": "jupytextSync.cell.insertRawCodeCellAboveAndFocusContainer",
+        "title": "Insert Raw Code Cell Above and Focus Container",
+        "shortTitle": "Raw Above",
+        "category": "Jupytext",
+        "icon": "$(insert)"
+      },
+      {
+        "command": "jupytextSync.cell.changeToCode",
+        "title": "Change Cell to default Code",
+        "shortTitle": "To Code",
+        "category": "Jupytext",
+        "icon": "$(code)"
+      },
+      {
+        "command": "jupytextSync.cell.changeToRaw",
+        "title": "Change Cell to Raw Code",
+        "shortTitle": "To Raw",
+        "category": "Jupytext",
+        "icon": "$(list-flat)"
+      },
+      {
+        "command": "jupytextSync.cell.toggleRaw",
+        "title": "Toggle Cell between Raw Code and default Code",
+        "shortTitle": "Toggle Raw",
+        "category": "Jupytext",
+        "icon": "$(arrow-swap)"
+      },
+      {
+        "command": "jupytextSync.setRecommendedCompactNotebookLayout",
+        "title": "Set Recommended Compact Notebook Layout",
+        "category": "Jupytext"
       }
-    ]
+    ],
+    "keybindings": [
+      {
+        "command": "jupytextSync.cell.changeToCode",
+        "key": "y",
+        "when": "notebookEditorFocused && !inputFocus && !notebookOutputFocused && activeEditor == 'workbench.editor.notebook'"
+      },
+      {
+        "command": "jupytextSync.cell.toggleRaw",
+        "key": "r",
+        "when": "notebookEditorFocused && !inputFocus && !notebookOutputFocused && activeEditor == 'workbench.editor.notebook'"
+      },
+      {
+        "command": "jupytextSync.cell.insertRawCodeCellBelowAndFocusContainer",
+        "key": "t",
+        "when": "notebookEditorFocused && !inputFocus && !notebookOutputFocused && activeEditor == 'workbench.editor.notebook'"
+      },
+      {
+        "command": "jupytextSync.cell.insertRawCodeCellAboveAndFocusContainer",
+        "key": "e",
+        "when": "notebookEditorFocused && !inputFocus && !notebookOutputFocused && activeEditor == 'workbench.editor.notebook'"
+      },
+      {
+        "key": "i i",
+        "command": "jupyter.interruptkernel",
+        "when": "notebookEditorFocused && !inputFocus && !notebookOutputFocused && activeEditor == 'workbench.editor.notebook'"
+      },
+      {
+        "key": "0 0",
+        "command": "jupyter.restartkernel",
+        "when": "notebookEditorFocused && !inputFocus && !notebookOutputFocused && activeEditor == 'workbench.editor.notebook'"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "jupytextSync.setFormats",
+          "when": "config.jupytextSync.enabledMenus.explorerContext && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "jupytextSync.setFormats",
+          "when": "config.jupytextSync.enabledMenus.editorContext && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "jupytextSync.setFormats",
+          "when": "config.jupytextSync.enabledMenus.editorTitle && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions",
+          "group": "navigation"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "jupytextSync.setFormats",
+          "when": "config.jupytextSync.enabledMenus.editorTitleContext && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions"
+        }
+      ],
+      "notebook/toolbar": [
+        {
+          "command": "jupytextSync.setFormats",
+          "when": "config.jupytextSync.enabledMenus.notebookToolbar && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions",
+          "group": "navigation"
+        },
+        {
+          "command": "jupytextSync.cell.insertRawCodeCellBelowAndFocusContainer",
+          "when": "config.jupytextSync.enabledMenus.notebookToolbarInsertRaw && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions",
+          "group": "navigation/edit@0"
+        },
+        {
+          "command": "jupytextSync.cell.toggleRaw",
+          "when": "config.jupytextSync.enabledMenus.notebookToolbarToRaw && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions",
+          "group": "navigation/edit@1"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "yarn run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "yarn run compile && yarn run lint",
+    "pretest": "yarn run lint --fix && yarn run compile",
     "lint": "eslint src",
     "test": "vscode-test",
-    "vsix": "vsce package -o jupytext-sync.vsix"
+    "code": "cursor",
+    "vsix:build": "yarn vsce package -o jupytext-sync.vsix",
+    "vsix:install": "yarn pretest && yarn vsix:build && yarn code --install-extension jupytext-sync.vsix"
   },
   "devDependencies": {
     "@types/vscode": "^1.95.0",
@@ -92,6 +356,7 @@
     "eslint": "^9.13.0",
     "typescript": "^5.6.3",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^3.3.2"
   }
 }
