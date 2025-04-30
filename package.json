@@ -1,29 +1,46 @@
 {
-  "name": "jupytext-paired",
-  "displayName": "Jupytext Paired Notebooks",
-  "description": "Support for paired Jupytext files.",
-  "version": "1.1.0",
+  "name": "jupytext-sync",
+  "displayName": "Jupytext Paired Jupyter Notebooks",
+  "description": "Auto sync paired Jupyter notebooks via Jupytext",
+  "version": "1.0.0",
   "engines": {
     "vscode": "^1.95.0"
   },
+  "license": "BSD-3-Clause",
   "categories": [
-    "Notebooks"
+    "Notebooks",
+    "Data Science",
+    "Programming Languages",
+    "Visualization",
+    "Machine Learning"
   ],
   "keywords": [
+    "python",
     "jupyter",
     "jupytext",
-    "notebooks"
+    "nbconvert",
+    "notebook",
+    "notebooks",
+    "synced",
+    "paired"
   ],
+  "publisher": "caenrigen",
+  "homepage": "https://github.com/caenrigen/vscode-jupytext-sync",
   "repository": {
     "type": "git",
-    "url": "https://github.com/marius311/jupytext-paired-vscode.git"
+    "url": "https://github.com/caenrigen/vscode-jupytext-sync.git"
+  },
+  "bugs": {
+    "url": "https://github.com/caenrigen/vscode-jupytext-sync/issues"
   },
   "icon": "icon.png",
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
-      "title": "Jupytext Paired Notebooks",
+      "title": "Jupytext Paired Jupyter Notebooks",
       "properties": {
         "jupytext-paired.jupytextCommand": {
           "type": "string",
@@ -32,7 +49,19 @@
         },
         "jupytext-paired.defaultFormat": {
           "type": "string",
-          "enum": ["hydrogen", "light", "markdown", "myst", "nomarker", "pandoc", "percent", "quarto", "rmarkdown", "spin", "sphinx"],
+          "enum": [
+            "hydrogen",
+            "light",
+            "markdown",
+            "myst",
+            "nomarker",
+            "pandoc",
+            "percent",
+            "quarto",
+            "rmarkdown",
+            "spin",
+            "sphinx"
+          ],
           "default": "light",
           "description": "The default format to suggest when pairing a notebook with a script."
         }
@@ -40,18 +69,19 @@
     },
     "commands": [
       {
-        "command": "jupytext-paired.pairFile",
-        "title": "Jupytext: Pair current notebook with script(s)"
+        "command": "jupytext-sync.pairFile",
+        "title": "Jupytext: Pair file with script(s)"
       }
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "yarn run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
+    "pretest": "yarn run compile && yarn run lint",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "vsix": "vsce package -o jupytext-sync.vsix"
   },
   "devDependencies": {
     "@types/vscode": "^1.95.0",
