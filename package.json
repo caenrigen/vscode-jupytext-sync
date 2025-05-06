@@ -342,8 +342,10 @@
     "pretest": "yarn run lint --fix && yarn run compile",
     "lint": "eslint src",
     "ide": "cursor",
-    "vsix:build": "yarn vsce package -o jupytext-sync.vsix",
-    "vsix:install": "yarn pretest && yarn vsix:build && yarn ide --install-extension jupytext-sync.vsix"
+    "vsix:build": "yarn pretest && yarn vsce package -o jupytext-sync.vsix",
+    "vsix:install": "yarn vsix:build && yarn ide --install-extension jupytext-sync.vsix",
+    "publish:vsce": "yarn vsix:build && yarn vsce publish",
+    "publish:ovsx": "yarn vsix:build && yarn ovsx publish jupytext-sync.vsix"
   },
   "devDependencies": {
     "@types/vscode": "^1.95.0",
