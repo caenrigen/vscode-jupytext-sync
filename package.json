@@ -4,7 +4,7 @@
   "description": "Pair and Auto Sync Jupyter Notebooks via Jupytext",
   "version": "1.0.0",
   "engines": {
-    "vscode": "^1.95.0"
+    "vscode": "^1.72.0"
   },
   "license": "MIT",
   "categories": [
@@ -348,7 +348,7 @@
     "publish:ovsx": "yarn vsix:build && yarn ovsx publish jupytext-sync.vsix"
   },
   "devDependencies": {
-    "@types/vscode": "^1.95.0",
+    "@types/vscode": "^1.72.0",
     "@types/node": "20.x",
     "@typescript-eslint/eslint-plugin": "^8.10.0",
     "@typescript-eslint/parser": "^8.7.0",

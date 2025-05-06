@@ -6,6 +6,12 @@ This VSCode extension is a wrapper around the Jupytext Python command-line inter
 
 The core motivation behind this extension is to bridge the gap between VSCode's powerful editing features and Jupytext's ability to keep notebooks in version-control-friendly text formats. While VSCode offers a notebook interface, it doesn't natively integrate with Jupytext's pairing and synchronization features. This extension provides that missing functionality, along with a few more convenience tools.
 
+## Installation
+
+You can install this extensions by searching for "Jupytext Sync" in the Extensions Marketplace within the IDE.
+
+Alternatively, you can install it directly by downloading the `.vsix` file from the release page on the GitHub and drag-and-drop it in your VSCode-based IDE. This has the downside that you will not be notified about available updates.
+
 ## Features
 
 This extension solves several common annoyances and provides handy features for a better Jupyter Notebook experience in VSCode:
