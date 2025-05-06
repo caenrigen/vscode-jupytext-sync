@@ -1,5 +1,7 @@
 # Jupytext Sync: Pair and Auto Sync Jupyter Notebooks via Jupytext in VSCode
 
+![screenshot.jpg](screenshot.jpg)
+
 This VSCode extension is a wrapper around the Jupytext Python command-line interface, designed to bring a smoother Jupyter Notebook experience to VSCode, especially for users familiar with JupyterLab or the classic Jupyter Notebook interface. It aims to address common pain points and streamline the workflow when working with Jupytext-paired notebooks in VSCode-based IDEs.
 
 The core motivation behind this extension is to bridge the gap between VSCode's powerful editing features and Jupytext's ability to keep notebooks in version-control-friendly text formats. While VSCode offers a notebook interface, it doesn't natively integrate with Jupytext's pairing and synchronization features. This extension provides that missing functionality, along with a few more convenience tools.
