@@ -10,6 +10,8 @@ The core motivation behind this extension is to bridge the gap between VSCode's 
 
 You can install this extensions by searching for "Jupytext Sync" in the Extensions Marketplace within the IDE.
 
+The extention is available on both [Microsoft VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=caenrigen.jupytext-sync) and on the [Open VSX Registry](https://open-vsx.org/extension/caenrigen/jupytext-sync) in case you are using an alternative VSCode-based IDE like [VSCodium](https://vscodium.com).
+
 Alternatively, you can install it directly by downloading the `.vsix` file from the release page on the GitHub and drag-and-drop it in your VSCode-based IDE. This has the downside that you will not be notified about available updates.
 
 ## Features
@@ -31,8 +33,8 @@ This extension solves several common annoyances and provides handy features for 
     -   Toggle cells to raw format and back to default code. Keyboard shortcuts available.
 -   **Compact Notebook Layout**: An optional command to apply recommended VSCode settings for a more compact and user-friendly notebook layout, similar to traditional Jupyter interfaces.
 -   **Python Interpreter Flexibility**:
-    -   Uses the Python interpreter configured in the [MS Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) by default.
-    -   Allows to configure a custom Python executable path for `jupytext` if needed.
+    -   Attempts are made to automatically discover Python executables that are able to invoke Jupytext via the [MS Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) if installed.
+    -   Allows to configure a custom Python executable path for `jupytext` if needed (via `jupytextSync.pythonExecutable` config).
 
 ## Recommended Workflow
 

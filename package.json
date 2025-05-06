@@ -56,7 +56,7 @@
         "jupytextSync.pythonExecutable": {
           "type": "string",
           "default": "",
-          "markdownDescription": "The path to the Python executable used to invoke `jupytext`.\n\nCan be, e.g., `python3` if you want to use the `python3` from your `$PATH`. You might have to launch VSCode from terminal in order to be able to use the python of your currently active virtual environment.\n\nIf not set, the Python interpreter configured in the [MS Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) will be used. You can configure it by invoking the [Python: Select Interpreter](command:python.setInterpreter) command.",
+          "markdownDescription": "The path to the Python executable used to invoke [`jupytext`](https://jupytext.readthedocs.io).\n\nJupytext Sync requires a Python executable to be installed along with the `jupytext` package.\n\n**Automatic discovery:**\n\nIf not specified in your User/Workspace settings, Jupytext Sync attempts to find a Python executable that has `jupytext` installed. If you have the [Microsoft Python extension](vscode:extension/ms-python.python) installed, Jupytext will be able to detect Python virtual environments (e.g., `venv`, `conda`, `virtualenv`, etc.), besides the `python` and `python3` from your `$PATH`. If more than one Python executable is found, the one that provides the highest version of `jupytext` is selected.\n\nTip: If you would like to know if Jupytext Sync found your python executable(s), you can check the [_Jupytext Sync Output_](command:vscode.commands.executeCommand?%5B%22jupytextSync.showLogs%22%5D) panel.\n\n**Manual override:**\n\nIf the automatic discovery failed or you want to use a different Python executable, you can specify the absolute path to the Python executable.\n\nAlternatively, you can set it to, e.g., `python3` if you want to use the `python3` from your `$PATH`. For this to work as expected, you might have to launch VSCode from terminal, otherwise `$PATH` might differ from what you are used to in the terminal. If you use a virtual python environment, you have to activate it first.",
           "order": 0
         },
         "jupytextSync.syncDocuments": {
@@ -109,10 +109,10 @@
             "type": "string"
           },
           "default": {
-            "default": "ipynb,${ext}:percent",
+            "default": ".jupytext-sync-ipynb//ipynb,${ext}:percent",
             ".ipynb": "ipynb,py:percent",
-            ".md": "ipynb,md:markdown",
-            ".markdown": "ipynb,markdown:markdown",
+            ".md": ".jupytext-sync-ipynb//ipynb,md:markdown",
+            ".markdown": ".jupytext-sync-ipynb//ipynb,markdown:markdown",
             ".Rmd": "default",
             ".py": "default",
             ".coco": "default",
@@ -219,6 +219,13 @@
         "icon": "$(notebook-open-as-text)"
       },
       {
+        "command": "jupytextSync.openPairedNotebook",
+        "title": "Open paired Notebook",
+        "shortTitle": "Open Notebook",
+        "category": "Jupytext",
+        "icon": "$(notebook-template)"
+      },
+      {
         "command": "jupytextSync.cell.insertRawCodeCellBelowAndFocusContainer",
         "title": "Insert Raw Code Cell Below and Focus Container",
         "shortTitle": "Raw",
@@ -315,22 +322,27 @@
         {
           "command": "jupytextSync.setFormats",
           "when": "config.jupytextSync.enabledMenus.editorTitleContext && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions"
+        },
+        {
+          "command": "jupytextSync.openPairedNotebook",
+          "when": "config.jupytextSync.enabledMenus.editorTitleContext && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions && resourceExtname != '.ipynb'",
+          "group": "navigation"
         }
       ],
       "notebook/toolbar": [
         {
           "command": "jupytextSync.setFormats",
-          "when": "config.jupytextSync.enabledMenus.notebookToolbar && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions",
+          "when": "config.jupytextSync.enabledMenus.notebookToolbar && resourceLangId && resourceExtname in jupytextSync.supportedExtensions",
           "group": "navigation"
         },
         {
           "command": "jupytextSync.cell.insertRawCodeCellBelowAndFocusContainer",
-          "when": "config.jupytextSync.enabledMenus.notebookToolbarInsertRaw && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions",
+          "when": "config.jupytextSync.enabledMenus.notebookToolbarInsertRaw && resourceLangId && resourceExtname in jupytextSync.supportedExtensions",
           "group": "navigation/edit@0"
         },
         {
           "command": "jupytextSync.cell.toggleRaw",
-          "when": "config.jupytextSync.enabledMenus.notebookToolbarToRaw && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions",
+          "when": "config.jupytextSync.enabledMenus.notebookToolbarToRaw && resourceLangId && resourceExtname in jupytextSync.supportedExtensions",
           "group": "navigation/edit@1"
         }
       ]
@@ -356,5 +368,8 @@
     "eslint": "^9.13.0",
     "typescript": "^5.6.3",
     "ovsx": "^0.10.2"
+  },
+  "dependencies": {
+    "@vscode/python-extension": "^1.0.5"
   }
 }

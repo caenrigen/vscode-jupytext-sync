@@ -1,6 +1,6 @@
 import * as vscode from "vscode"
 import {config} from "./constants"
-import {getPythonExecutable, runPython} from "./python"
+import {getPythonPaths, runCommand, resolvePythonExecutable} from "./python"
 import {getJConsole} from "./constants"
 import * as path from "path"
 
@@ -55,7 +55,19 @@ export const EXTENSIONS = [
     ".mnb",
 ]
 
-let jupytextVersion: string | undefined = undefined
+export type MaybeJupytext = {
+    python: string
+    executable: string | undefined
+    jupytextVersion: string | undefined
+}
+
+export type Jupytext = {
+    python: string
+    executable: string
+    jupytextVersion: string
+}
+
+let jupytextInfo: Jupytext | undefined = undefined
 let supportedExtensions: string[] = EXTENSIONS
 
 export function getSupportedExtensions(): string[] {
@@ -66,22 +78,69 @@ export function setSupportedExtensions(extensions: string[]): void {
     supportedExtensions = extensions
 }
 
-export function getJupytextVersion(): string | undefined {
-    return jupytextVersion
+export function getJupytext(): Jupytext | undefined {
+    return jupytextInfo
 }
 
-export async function runJupytextVersion(): Promise<boolean> {
-    jupytextVersion = await runJupytext(["--version"], false)
-    if (jupytextVersion) {
-        getJConsole().appendLine(`Using Jupytext version ${getJupytextVersion()} via ${getPythonExecutable()}`)
-        return true
+export function setJupytext(jupytext: Jupytext | undefined, showMessage: boolean = false): void {
+    jupytextInfo = jupytext
+    if (!jupytext) {
+        console.log("Jupytext cleared")
+        return
     }
-    return false
+    let msg = `Using Jupytext ${jupytext.jupytextVersion} via '${jupytext.executable}' `
+    if (jupytext.executable !== jupytext.python) {
+        msg += ` (${jupytext.python}).`
+    }
+    console.log(msg)
+    getJConsole().appendLine(msg)
+    msg +=
+        " This is configurable in the " +
+        "[settings](command:workbench.action.openSettings?%5B%22jupytextSync.pythonExecutable%22%5D)."
+    if (showMessage) {
+        vscode.window.showInformationMessage(msg) // don't await
+    }
+}
+
+export async function getAvailableVersions(): Promise<Jupytext[]> {
+    const pythonPaths = await getPythonPaths()
+    const versions = await Promise.all(pythonPaths.map(resolveJupytext))
+    let msg = "Verifying Jupytext versions:\n"
+    for (const v of versions) {
+        msg += `Option: ${v}`
+    }
+    console.log(msg)
+    getJConsole().appendLine(msg)
+    return versions.filter((v) => v.executable && v.jupytextVersion) as Jupytext[]
+}
+
+async function runJupytextVersion(pythonPath: string) {
+    try {
+        const version = await runCommand([pythonPath, "-m", "jupytext", "--version"])
+        return version ?? undefined
+    } catch (ex) {
+        const msg = `Failed to run Jupytext version with ${pythonPath}: ${ex}`
+        console.debug(msg, ex)
+        return undefined
+    }
+}
+
+export async function resolveJupytext(pythonPath: string): Promise<MaybeJupytext> {
+    const executable = await resolvePythonExecutable([pythonPath])
+    if (!executable) {
+        return {python: pythonPath, executable: undefined, jupytextVersion: undefined}
+    }
+    const jupytextVersion = await runJupytextVersion(executable)
+    return {python: pythonPath, executable, jupytextVersion}
 }
 
 export async function runJupytext(cmdArgs: string[], showError: boolean = true): Promise<string> {
     try {
-        const output = await runPython(["-m", "jupytext"].concat(cmdArgs))
+        const jupytext = getJupytext()
+        if (!jupytext) {
+            throw new Error("Jupytext not found")
+        }
+        const output = await runCommand([jupytext.executable, "-m", "jupytext"].concat(cmdArgs))
         getJConsole().appendLine(output)
         return output
     } catch (ex) {
@@ -103,12 +162,17 @@ export async function runJupytext(cmdArgs: string[], showError: boolean = true):
 
 export async function importJupytextFileExtensions(): Promise<string[] | undefined> {
     try {
-        const extensions = await runPython([
+        const jupytext = getJupytext()
+        if (!jupytext) {
+            throw new Error("Jupytext not found")
+        }
+        const extensions = await runCommand([
+            jupytext.executable,
             "-c",
             "import jupytext; import json; print(json.dumps(jupytext.formats.NOTEBOOK_EXTENSIONS))",
         ])
         const extensionsArray = JSON.parse(extensions)
-        getJConsole().appendLine(`Jupytext ${getJupytextVersion()} supports: ${extensionsArray.join(", ")}`)
+        getJConsole().appendLine(`Jupytext ${jupytext.jupytextVersion} supports: ${extensionsArray.join(", ")}`)
         return extensionsArray
     } catch (ex) {
         const msg = `Failed to import Jupytext and the file extensions it supports: ${ex}`
@@ -136,7 +200,12 @@ export function isSupportedFile(fileName: string): boolean {
 }
 
 export async function handleDocument(document: vscode.TextDocument | vscode.NotebookDocument) {
-    if (jupytextVersion && isSupportedFile(document.uri.fsPath) && document.uri.scheme === "file") {
+    const jupytext = getJupytext()
+    if (!jupytext) {
+        console.error("handleDocument: Jupytext not set")
+        return
+    }
+    if (isSupportedFile(document.uri.fsPath) && document.uri.scheme === "file") {
         return await runJupytextSync(document.uri.fsPath)
     }
 }
@@ -200,4 +269,50 @@ export async function setFormats(fileUri?: vscode.Uri) {
     if (formats) {
         await runJupytextSetFormats(fileName, formats)
     }
+}
+
+function compareVersions(a: string, b: string) {
+    const regex = /^(\d+)\.(\d+)\.(\d+)(rc\d*)?$/
+
+    const matchA = a.match(regex)
+    const matchB = b.match(regex)
+
+    if (!matchA || !matchB) {
+        // Handle invalid version strings if necessary, or throw an error
+        // For simplicity, this example pushes them to the end
+        if (!matchA && !matchB) return 0
+        return !matchA ? 1 : -1
+    }
+
+    const [, majorA, minorA, patchA, rcA] = matchA.map((val, i) => (i > 0 && i < 4 ? parseInt(val, 10) : val))
+    const [, majorB, minorB, patchB, rcB] = matchB.map((val, i) => (i > 0 && i < 4 ? parseInt(val, 10) : val))
+
+    if (majorA !== majorB) return (majorA as number) - (majorB as number)
+    if (minorA !== minorB) return (minorA as number) - (minorB as number)
+    if (patchA !== patchB) return (patchA as number) - (patchB as number)
+
+    // Handle release candidates
+    if (rcA && !rcB) return -1 // rcA comes before non-rc B
+    if (!rcA && rcB) return 1 // non-rc A comes after rcB
+    if (rcA && rcB) {
+        if (rcA === rcB) return 0
+        // Extract rc numbers for comparison, e.g., "rc0" -> 0, "rc2" -> 2
+        const rcNumA = parseInt((rcA as string).substring(2), 10)
+        const rcNumB = parseInt((rcB as string).substring(2), 10)
+        return rcNumA - rcNumB
+    }
+
+    return 0 // Versions are identical (shouldn't happen if rc logic is complete)
+}
+
+export function sortVersions(versions: Jupytext[]) {
+    return versions.sort((vA, vB) => compareVersions(vA.jupytextVersion, vB.jupytextVersion))
+}
+
+export async function pickJupytext(): Promise<Jupytext | undefined> {
+    const msg = "Attempting to pick a python executable and Jupytext automatically"
+    console.log(msg)
+    getJConsole().appendLine(msg)
+    const sorted = sortVersions(await getAvailableVersions())
+    return sorted[sorted.length - 1] ?? undefined
 }

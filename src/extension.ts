@@ -1,7 +1,6 @@
 import * as vscode from "vscode"
-import {getPythonExecutable, locatePython} from "./python"
-import {runJupytextVersion} from "./jupytext"
-import {getJConsole, config} from "./constants"
+import {getJupytext, pickJupytext, resolveJupytext, setJupytext, Jupytext} from "./jupytext"
+import {getJConsole, config, setConfig} from "./constants"
 import {
     setFormats,
     importJupytextFileExtensions,
@@ -12,13 +11,6 @@ import {
 
 // Store disposables for event handlers so we can manage them
 let disposables: vscode.Disposable[] = []
-
-export async function locatePythonAndJupytext(): Promise<[boolean, boolean]> {
-    if (!(await locatePython())) {
-        return [false, false]
-    }
-    return [true, await runJupytextVersion()]
-}
 
 export async function activate(context: vscode.ExtensionContext) {
     getJConsole().appendLine("Activating Jupytext extension...")
@@ -57,6 +49,7 @@ export async function activate(context: vscode.ExtensionContext) {
             setRecommendedCompactNotebookLayout,
         ),
     )
+    context.subscriptions.push(vscode.commands.registerCommand("jupytextSync.showLogs", () => getJConsole().show()))
 
     // Initial setup of handlers based on current configuration
     await updateEventHandlers(context)
@@ -160,38 +153,56 @@ async function handleSelection(msg: string) {
 async function updateEventHandlers(context: vscode.ExtensionContext) {
     console.debug("updateEventHandlers")
 
-    // check if python and jupytext are installed
-    let [pythonFound, jupytextFound] = await locatePythonAndJupytext()
-    if (!pythonFound) {
-        const msg =
-            "Jupytext Sync: no python found. " +
-            "Jupytext Sync requires a python with [jupytext](https://jupytext.readthedocs.io/) module installed. " +
-            "Please select a workspace interpreter for " +
-            "[MS Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) " +
-            "or manually set the python executable in Jupytext Sync settings. " +
-            "Afterwards, restart VSCode for changes to take effect."
-        await handleSelection(msg)
-        setSupportedExtensions([])
-        getJConsole().appendLine("Python not available. Jupytext Sync deactivated.")
-        return
+    let pythonPath = config().get<string>("pythonExecutable") ?? undefined
+    setJupytext(undefined) // reset runtime jupytext
+
+    if (pythonPath) {
+        const jupytext = await resolveJupytext(pythonPath)
+        if (jupytext.executable && jupytext.jupytextVersion) {
+            setJupytext(jupytext as Jupytext, false)
+        } else {
+            const msg =
+                `Could not invoke Jupytext with the python executable '${pythonPath}'. ` +
+                "Will attempt to locate a suitable Python executable automatically."
+            console.warn(msg)
+            getJConsole().appendLine(msg)
+            pythonPath = undefined
+            vscode.window.showWarningMessage(msg) // don't await
+        }
     }
 
-    if (!jupytextFound) {
-        const msg =
-            `Jupytext cannot be invoked with ${getPythonExecutable()}. ` +
-            "Jupytext Sync requires a python with [jupytext](https://jupytext.readthedocs.io/) module installed. " +
-            "Please [install jupytext](https://jupytext.readthedocs.io/en/latest/install.html) " +
-            "in your python environment. Alternatively, you can select a different workspace interpreter for " +
-            "[MS Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) " +
-            "or set the python executable manually in Jupytext Sync settings. " +
-            "Afterwards, restart VSCode for changes to take effect."
-        await handleSelection(msg)
-        setSupportedExtensions([])
-        getJConsole().appendLine("Python not available. Jupytext Sync deactivated.")
-        return
+    // First launch or bad python/jupytext, try to set it automatically
+    if (!pythonPath) {
+        const jupytext = await pickJupytext()
+        if (jupytext) {
+            setJupytext(jupytext, true)
+            // Set it globally to avoid the need to select the interpreter again.
+            // It is less intuitive for less experienced users. Advanced users can
+            // always configure the Workspace overrides.
+            await setConfig("jupytextSync.pythonExecutable", jupytext.executable, vscode.ConfigurationTarget.Global)
+        } else {
+            const messageSettings =
+                "Failed to automatically locate a python executable that can invoke Jupytext. " +
+                "Click 'Open Settings' and specify the Python Executable. " +
+                "There you will find more detailed instructions and tips. " +
+                "If you still have issues, click 'Show Logs' for more information or " +
+                "create an issue on [GitHub](https://github.com/caenrigen/vscode-jupytext-sync/issues)."
+            const selection = await vscode.window.showErrorMessage(messageSettings, "Open Settings", "Show Logs")
+            if (selection === "Open Settings") {
+                vscode.commands.executeCommand("workbench.action.openSettings", "jupytextSync.pythonExecutable") // don't await
+            } else if (selection === "Show Logs") {
+                getJConsole().show()
+            }
+        }
     }
 
-    // set the initial supported extensions, will be used as a fallback
+    // update supported extensions importing them from the jupytext python module
+    if (getJupytext()) {
+        const extensions = await importJupytextFileExtensions()
+        if (extensions) {
+            setSupportedExtensions(extensions)
+        }
+    }
     await vscode.commands.executeCommand("setContext", "jupytextSync.supportedExtensions", getSupportedExtensions())
 
     const syncDocuments = config().get<{
@@ -234,15 +245,8 @@ async function updateEventHandlers(context: vscode.ExtensionContext) {
         disposables.push(vscode.workspace.onDidCloseNotebookDocument(handleDocument))
     }
 
-    // update supported extensions importing them from the jupytext python module
-    const extensions = await importJupytextFileExtensions()
-    if (extensions) {
-        setSupportedExtensions(extensions)
-        await vscode.commands.executeCommand("setContext", "jupytextSync.supportedExtensions", getSupportedExtensions())
-    }
-
     // Suggest compact layout on first activation
-    if (!context.globalState.get("hasShownCompactLayoutSuggestion")) {
+    if (pythonPath && !context.globalState.get("hasShownCompactLayoutSuggestion")) {
         const selection = await vscode.window.showInformationMessage(
             "Jupytext Sync: Would you like to apply a recommended compact notebook layout for a better experience?",
             "Apply Layout",
@@ -250,7 +254,7 @@ async function updateEventHandlers(context: vscode.ExtensionContext) {
         if (selection === "Apply Layout") {
             vscode.commands.executeCommand("jupytextSync.setRecommendedCompactNotebookLayout")
         }
-        context.globalState.update("hasShownCompactLayoutSuggestion", true)
+        await context.globalState.update("hasShownCompactLayoutSuggestion", true)
     }
 }
 
@@ -268,15 +272,8 @@ async function setRecommendedCompactNotebookLayout() {
         "notebook.scrolling.revealNextCellOnExecute": "firstLine",
     }
 
-    const config = vscode.workspace.getConfiguration()
-
     for (const [key, value] of Object.entries(settingsToUpdate)) {
-        try {
-            await config.update(key, value, vscode.ConfigurationTarget.Global)
-        } catch (error) {
-            console.error(`Failed to update setting ${key}:`, error)
-            vscode.window.showErrorMessage(`Failed to update setting ${key}. See console for details.`)
-        }
+        await setConfig(key, value, vscode.ConfigurationTarget.Global)
     }
     vscode.window.showInformationMessage("Recommended compact notebook layout settings applied.")
 }
