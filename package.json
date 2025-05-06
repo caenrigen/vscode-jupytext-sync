@@ -337,26 +337,21 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "yarn run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "yarn run lint --fix && yarn run compile",
     "lint": "eslint src",
-    "test": "vscode-test",
-    "code": "cursor",
+    "ide": "cursor",
     "vsix:build": "yarn vsce package -o jupytext-sync.vsix",
-    "vsix:install": "yarn pretest && yarn vsix:build && yarn code --install-extension jupytext-sync.vsix"
+    "vsix:install": "yarn pretest && yarn vsix:build && yarn ide --install-extension jupytext-sync.vsix"
   },
   "devDependencies": {
     "@types/vscode": "^1.95.0",
-    "@types/mocha": "^10.0.9",
     "@types/node": "20.x",
     "@typescript-eslint/eslint-plugin": "^8.10.0",
     "@typescript-eslint/parser": "^8.7.0",
     "eslint": "^9.13.0",
     "typescript": "^5.6.3",
-    "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1",
     "@vscode/vsce": "^3.3.2"
   }
 }
