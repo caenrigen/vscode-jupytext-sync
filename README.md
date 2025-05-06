@@ -75,14 +75,3 @@ This extension was inspired by and builds upon the ideas from the following proj
 ## Related Projects
 
 -   [fmilanese-1/ds_utils](https://github.com/fmilanese-1/ds_utils): A VSCode extension that has some `jupytext`-based capabilities and supports exporting notebooks to HTML via `nbconvert`, but does not include automatic synchronization of paired files.
-
-## Release Notes
-
-### 1.0.0 (2025-05-06)
-
-Initial release.
-
--   Core Jupytext pairing and synchronization functionality.
--   Automatic sync on open/save/close (configurable).
--   Commands for pairing, raw cell manipulation.
--   Optional compact notebook layout command.
