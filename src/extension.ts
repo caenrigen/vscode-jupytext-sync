@@ -135,8 +135,8 @@ async function toggleRaw() {
         const cells = editor.notebook.getCells(nbRange)
         for (const cell of cells) {
             if (
-                cell.kind != vscode.NotebookCellKind.Code ||
-                (cell.kind == vscode.NotebookCellKind.Code && cell.document.languageId != "raw")
+                cell.kind !== vscode.NotebookCellKind.Code ||
+                (cell.kind === vscode.NotebookCellKind.Code && cell.document.languageId !== "raw")
             ) {
                 return await changeToRaw()
             }
