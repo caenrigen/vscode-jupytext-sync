@@ -23,7 +23,7 @@ This extension solves several common annoyances and provides handy features for 
     -   Toggle cells to raw format and back to default code. Keyboard shortcuts available.
 -   **Compact Notebook Layout**: An optional command to apply recommended VSCode settings for a more compact and user-friendly notebook layout, similar to traditional Jupyter interfaces.
 -   **Python Interpreter Flexibility**:
-    -   Uses the Python interpreter configured in the MS Python extension by default.
+    -   Uses the Python interpreter configured in the [MS Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) by default.
     -   Allows to configure a custom Python executable path for `jupytext` if needed.
 
 ## Recommended Workflow
@@ -46,7 +46,7 @@ This extension solves several common annoyances and provides handy features for 
 
 You can configure the extension's behavior via VSCode settings, search for `jupytextSync`:
 
--   `jupytextSync.pythonExecutable`: Path to the Python executable for Jupytext. Defaults to the interpreter selected by the MS Python extension.
+-   `jupytextSync.pythonExecutable`: Path to the Python executable for Jupytext. Defaults to the interpreter selected by the [MS Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python).
 -   `jupytextSync.syncDocuments`: Control on which events (open, save, close) to sync documents.
 -   `jupytextSync.defaultFormats`: Define default pairing formats suggestion per file extension.
 -   `jupytextSync.enabledMenus`: Enable or disable Jupytext commands in different VSCode UI locations (explorer, editor context menus, toolbars).

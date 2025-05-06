@@ -71,29 +71,31 @@ export function getJupytextVersion(): string | undefined {
 }
 
 export async function runJupytextVersion(): Promise<boolean> {
-    jupytextVersion = await runJupytext(["--version"])
-    if (jupytextVersion !== undefined) {
+    jupytextVersion = await runJupytext(["--version"], false)
+    if (jupytextVersion) {
         getJConsole().appendLine(`Using Jupytext version ${getJupytextVersion()} via ${getPythonExecutable()}`)
         return true
     }
     return false
 }
 
-export async function runJupytext(cmdArgs: string[]): Promise<string> {
+export async function runJupytext(cmdArgs: string[], showError: boolean = true): Promise<string> {
     try {
         const output = await runPython(["-m", "jupytext"].concat(cmdArgs))
         getJConsole().appendLine(output)
         return output
     } catch (ex) {
-        const selection = await vscode.window.showErrorMessage(
-            `Failed to run Jupytext. See output for details.`,
-            "Show Output",
-        )
         const msg = `Failed to run Jupytext: ${ex}`
         console.error(msg, ex)
         getJConsole().appendLine(msg)
-        if (selection === "Show Output") {
-            getJConsole().show()
+        if (showError) {
+            const selection = await vscode.window.showErrorMessage(
+                `Failed to run Jupytext. See output for details.`,
+                "Show Output",
+            )
+            if (selection === "Show Output") {
+                getJConsole().show()
+            }
         }
         return ""
     }
@@ -134,7 +136,7 @@ export function isSupportedFile(fileName: string): boolean {
 }
 
 export async function handleDocument(document: vscode.TextDocument | vscode.NotebookDocument) {
-    if (isSupportedFile(document.uri.fsPath) && document.uri.scheme === "file") {
+    if (jupytextVersion && isSupportedFile(document.uri.fsPath) && document.uri.scheme === "file") {
         return await runJupytextSync(document.uri.fsPath)
     }
 }

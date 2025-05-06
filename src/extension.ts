@@ -23,9 +23,6 @@ export async function locatePythonAndJupytext(): Promise<[boolean, boolean]> {
 export async function activate(context: vscode.ExtensionContext) {
     getJConsole().appendLine("Activating Jupytext extension...")
 
-    // Initial setup of handlers based on current configuration
-    await updateEventHandlers(context)
-
     // Listen for configuration changes and update handlers accordingly
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(async (e) => {
@@ -60,6 +57,9 @@ export async function activate(context: vscode.ExtensionContext) {
             setRecommendedCompactNotebookLayout,
         ),
     )
+
+    // Initial setup of handlers based on current configuration
+    await updateEventHandlers(context)
 }
 
 async function insertRawCodeCellBelowAndFocusContainer() {
@@ -159,6 +159,38 @@ async function handleSelection(msg: string) {
 
 async function updateEventHandlers(context: vscode.ExtensionContext) {
     console.debug("updateEventHandlers")
+
+    // check if python and jupytext are installed
+    let [pythonFound, jupytextFound] = await locatePythonAndJupytext()
+    if (!pythonFound) {
+        const msg =
+            "Jupytext Sync: no python found. " +
+            "Jupytext Sync requires a python with [jupytext](https://jupytext.readthedocs.io/) module installed. " +
+            "Please select a workspace interpreter for " +
+            "[MS Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) " +
+            "or manually set the python executable in Jupytext Sync settings. " +
+            "Afterwards, restart VSCode for changes to take effect."
+        await handleSelection(msg)
+        setSupportedExtensions([])
+        getJConsole().appendLine("Python not available. Jupytext Sync deactivated.")
+        return
+    }
+
+    if (!jupytextFound) {
+        const msg =
+            `Jupytext cannot be invoked with ${getPythonExecutable()}. ` +
+            "Jupytext Sync requires a python with [jupytext](https://jupytext.readthedocs.io/) module installed. " +
+            "Please [install jupytext](https://jupytext.readthedocs.io/en/latest/install.html) " +
+            "in your python environment. Alternatively, you can select a different workspace interpreter for " +
+            "[MS Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) " +
+            "or set the python executable manually in Jupytext Sync settings. " +
+            "Afterwards, restart VSCode for changes to take effect."
+        await handleSelection(msg)
+        setSupportedExtensions([])
+        getJConsole().appendLine("Python not available. Jupytext Sync deactivated.")
+        return
+    }
+
     // set the initial supported extensions, will be used as a fallback
     await vscode.commands.executeCommand("setContext", "jupytextSync.supportedExtensions", getSupportedExtensions())
 
@@ -200,37 +232,6 @@ async function updateEventHandlers(context: vscode.ExtensionContext) {
     }
     if (syncDocuments.onNotebookDocumentClose) {
         disposables.push(vscode.workspace.onDidCloseNotebookDocument(handleDocument))
-    }
-
-    // check if python and jupytext are installed
-    let [pythonFound, jupytextFound] = await locatePythonAndJupytext()
-    if (!pythonFound) {
-        const msg =
-            "Jupytext Sync: no python found. " +
-            "Jupytext Sync requires a python with [jupytext](https://jupytext.readthedocs.io/) module installed. " +
-            "Please select a workspace interpreter for " +
-            "[MS Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) " +
-            "or manually set the python executable in Jupytext Sync settings. " +
-            "Afterwards, restart VSCode for changes to take effect."
-        await handleSelection(msg)
-        setSupportedExtensions([])
-        getJConsole().appendLine("Python not available. Jupytext Sync deactivated.")
-        return
-    }
-
-    if (!jupytextFound) {
-        const msg =
-            `Jupytext cannot be invoked with ${getPythonExecutable()}. ` +
-            "Jupytext Sync requires a python with [jupytext](https://jupytext.readthedocs.io/) module installed. " +
-            "Please [install jupytext](https://jupytext.readthedocs.io/en/latest/install.html) " +
-            "in your python environment. Alternatively, you can select a different workspace interpreter for " +
-            "[MS Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) " +
-            "or set the python executable manually in Jupytext Sync settings. " +
-            "Afterwards, restart VSCode for changes to take effect."
-        await handleSelection(msg)
-        setSupportedExtensions([])
-        getJConsole().appendLine("Python not available. Jupytext Sync deactivated.")
-        return
     }
 
     // update supported extensions importing them from the jupytext python module
