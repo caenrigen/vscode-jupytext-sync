@@ -7,6 +7,8 @@ import {
     getSupportedExtensions,
     setSupportedExtensions,
     handleDocument,
+    openPairedNotebook,
+    pair,
 } from "./jupytext"
 
 // Store disposables for event handlers so we can manage them
@@ -27,7 +29,8 @@ export async function activate(context: vscode.ExtensionContext) {
             }
         }),
     )
-    context.subscriptions.push(vscode.commands.registerCommand("jupytextSync.setFormats", setFormats))
+    context.subscriptions.push(vscode.commands.registerCommand("jupytextSync.pair", pair))
+    context.subscriptions.push(vscode.commands.registerCommand("jupytextSync.openPairedNotebook", openPairedNotebook))
     context.subscriptions.push(vscode.commands.registerCommand("jupytextSync.cell.changeToRaw", changeToRaw))
     context.subscriptions.push(vscode.commands.registerCommand("jupytextSync.cell.changeToCode", changeToCode))
     context.subscriptions.push(vscode.commands.registerCommand("jupytextSync.cell.toggleRaw", toggleRaw))

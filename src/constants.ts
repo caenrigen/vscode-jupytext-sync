@@ -1,5 +1,7 @@
 import * as vscode from "vscode"
 
+export const defaultNotebookDir = ".jupytext-sync-ipynb"
+
 export function config(section?: string): vscode.WorkspaceConfiguration {
     return vscode.workspace.getConfiguration(section ?? "jupytextSync")
 }

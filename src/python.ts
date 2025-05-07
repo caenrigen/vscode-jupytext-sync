@@ -69,17 +69,18 @@ export async function runCommand(cmdArgs: string[], cwd?: string): Promise<strin
         proc.on("exit", (code: number) => {
             stderr = stderr.trim()
             stdout = stdout.trim()
+            let msg = `Exit code '${code}' during '${cmdStr}'`
+            if (stderr.length > 0) {
+                msg += `\n(stderr): ${stderr}`
+            }
+            if (stdout.length > 0) {
+                msg += `\n(stdout): ${stdout}`
+            }
             if (code !== 0) {
-                let msg = `Exit code '${code}' during '${cmdStr}'`
-                if (stderr.length > 0) {
-                    msg += `\n(stderr): ${stderr}`
-                }
-                if (stdout.length > 0) {
-                    msg += `\n(stdout): ${stdout}`
-                }
                 console.error(msg)
                 return reject(stderr)
             }
+            console.debug(msg)
             resolve(stdout)
         })
         // Not sure if needed, we already get the output in the proc.on("exit")
@@ -87,7 +88,7 @@ export async function runCommand(cmdArgs: string[], cwd?: string): Promise<strin
         // proc.on("close", () => {
         //     stdout = stdout.trim()
         //     stderr = stderr.trim()
-        //     let msg = `Done '${cmdStr}'`
+        //     let msg = `Closed '${cmdStr}'`
         //     if (stderr.length > 0) {
         //         msg += `\n(stderr): ${stderr}`
         //     }
@@ -95,7 +96,6 @@ export async function runCommand(cmdArgs: string[], cwd?: string): Promise<strin
         //         msg += `\n(stdout): ${stdout}`
         //     }
         //     console.debug(msg)
-        //     getJConsole().appendLine(msg)
         //     resolve(stdout)
         // })
     })

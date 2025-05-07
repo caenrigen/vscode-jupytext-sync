@@ -12,7 +12,10 @@
     "Data Science",
     "Programming Languages",
     "Visualization",
-    "Machine Learning"
+    "Machine Learning",
+    "AI",
+    "Education",
+    "Other"
   ],
   "keywords": [
     "python",
@@ -56,7 +59,7 @@
         "jupytextSync.pythonExecutable": {
           "type": "string",
           "default": "",
-          "markdownDescription": "The path to the Python executable used to invoke [`jupytext`](https://jupytext.readthedocs.io).\n\nJupytext Sync requires a Python executable to be installed along with the `jupytext` package.\n\n**Automatic discovery:**\n\nIf not specified in your User/Workspace settings, Jupytext Sync attempts to find a Python executable that has `jupytext` installed. If you have the [Microsoft Python extension](vscode:extension/ms-python.python) installed, Jupytext will be able to detect Python virtual environments (e.g., `venv`, `conda`, `virtualenv`, etc.), besides the `python` and `python3` from your `$PATH`. If more than one Python executable is found, the one that provides the highest version of `jupytext` is selected.\n\nTip: If you would like to know if Jupytext Sync found your python executable(s), you can check the [_Jupytext Sync Output_](command:vscode.commands.executeCommand?%5B%22jupytextSync.showLogs%22%5D) panel.\n\n**Manual override:**\n\nIf the automatic discovery failed or you want to use a different Python executable, you can specify the absolute path to the Python executable.\n\nAlternatively, you can set it to, e.g., `python3` if you want to use the `python3` from your `$PATH`. For this to work as expected, you might have to launch VSCode from terminal, otherwise `$PATH` might differ from what you are used to in the terminal. If you use a virtual python environment, you have to activate it first.",
+          "markdownDescription": "The path to the Python executable used to invoke [`jupytext`](https://jupytext.readthedocs.io).\n\nJupytext Sync requires a Python executable to be installed along with the `jupytext` package.\n\n**Automatic discovery:** If not specified in your User/Workspace settings, Jupytext Sync attempts to find a Python executable that has `jupytext` installed. If you have the [Microsoft Python extension](vscode:extension/ms-python.python) installed, Jupytext will be able to detect Python virtual environments (e.g., `venv`, `conda`, `virtualenv`, etc.), besides the `python` and `python3` from your `$PATH`. If more than one Python executable is found, the one that provides the highest version of `jupytext` is selected.\nTip: If you would like to know if Jupytext Sync found your python executable(s), you can check the logs in the [_Jupytext Sync Output_](command:jupytextSync.showLogs) panel.\n\n**Manual override:** If the automatic discovery failed or you want to use a different Python executable, you can specify the absolute path to the Python executable.\nAlternatively, you can set it to, e.g., `python3` if you want to use the `python3` from your `$PATH`. For this to work as expected, you might have to launch VSCode from terminal, otherwise `$PATH` might differ from what you are used to in the terminal. If you use a virtual python environment, you have to activate it first.",
           "order": 0
         },
         "jupytextSync.syncDocuments": {
@@ -98,6 +101,26 @@
           "additionalProperties": false,
           "markdownDescription": "Controls on which events to attempt to `jupytext --sync` previously paired documents (in the text/notebook editor).\n\nNote that this will apply even if the pairing has been performed externally, e.g., manually running `jupytext --set-formats ...` in the terminal, and the pairing metadata has been saved in the text document.",
           "order": 1
+        },
+        "jupytextSync.askFormats": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": {
+            "onOpenPairedNotebook": false,
+            "onPairDocuments": true
+          },
+          "properties": {
+            "onOpenPairedNotebook": {
+              "type": "boolean",
+              "description": "Ask for the pairing file formats before opening a text document as paired notebook."
+            },
+            "onPairDocuments": {
+              "type": "boolean",
+              "description": "Ask for the pairing file formats before pairing documents."
+            }
+          },
+          "markdownDescription": "Controls whether to ask for the pairing file formats before executing commands that may require pairing files. If `false`, the default pairing file formats specified in the [Default Formats](command:workbench.action.openSettings?%5B%22%40id%3AjupytextSync.defaultFormats%22%5D) configuration will be used.",
+          "order": 2
         },
         "jupytextSync.defaultFormats": {
           "type": "object",
@@ -159,7 +182,7 @@
             ".mystnb": "default",
             ".mnb": "default"
           },
-          "markdownDescription": "Default suggested pairing file formats per file extension.\nYou will be given the chance to edit it in the command palette when you invoke the pairing command.\nThe pairing command and the sync will be enabled only for file extensions supported by the jupytext itself.\nThe main text file formats supported by jupytext are: `percent`, `hydrogen`, `light`, `nomarker`, `markdown`, `myst`, `rmarkdown`, `spin`, `quarto`, `pandoc` and `sphinx`.\nYou can set the **Value** of any extension to `default` to be suggested the format specified by the `default` **Key**. `${ext}` will be replaced with the corresponding file extension (without the `.`).",
+          "markdownDescription": "Define default Jupytext pairing formats (e.g., `ipynb,py:percent`) to control how Jupytext Sync pairs and syncs files. Formats can be overridden per file when pairing or opening as notebook, see [Ask Formats](command:workbench.action.openSettings?%5B%22%40id%3AjupytextSync.askFormats%22%5D).\n\n**Syntax:** Uses Jupytext's `--set-formats` string. `${ext}` is the file extension (w/out `.`).\n\n**`default` Key:** An extension set to `default` inherits this key's format string.\n\n**Subdirectories:** Prefix with `dir_name//` (e.g., `notebooks//ipynb,scripts//py:percent,md`). Paths are relative to the source file's parent dir. \n\n**Docs:** For all Jupytext formats and detailed syntax, see the [Jupytext documentation](https://jupytext.readthedocs.io/en/latest/formats.html).\n\n**Activation:** Enabled for file extensions recognized by your installed `jupytext` package. Unsupported entries will be ignored.",
           "title": "Default pairing file formats",
           "order": 4
         },
@@ -212,7 +235,12 @@
     },
     "commands": [
       {
-        "command": "jupytextSync.setFormats",
+        "command": "jupytextSync.showLogs",
+        "title": "Show Jupytext Sync Logs",
+        "category": "Jupytext"
+      },
+      {
+        "command": "jupytextSync.pair",
         "title": "Pair via Jupytext",
         "shortTitle": "Pair",
         "category": "Jupytext",
@@ -220,8 +248,8 @@
       },
       {
         "command": "jupytextSync.openPairedNotebook",
-        "title": "Open paired Notebook",
-        "shortTitle": "Open Notebook",
+        "title": "Open as paired Notebook via Jupytext",
+        "shortTitle": "Open as Notebook",
         "category": "Jupytext",
         "icon": "$(notebook-template)"
       },
@@ -301,38 +329,55 @@
     "menus": {
       "explorer/context": [
         {
-          "command": "jupytextSync.setFormats",
+          "command": "jupytextSync.pair",
           "when": "config.jupytextSync.enabledMenus.explorerContext && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions"
+        },
+        {
+          "command": "jupytextSync.openPairedNotebook",
+          "when": "config.jupytextSync.enabledMenus.explorerContext && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions && resourceExtname != '.ipynb'"
         }
       ],
       "editor/context": [
         {
-          "command": "jupytextSync.setFormats",
+          "command": "jupytextSync.pair",
           "when": "config.jupytextSync.enabledMenus.editorContext && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions"
+        },
+        {
+          "command": "jupytextSync.openPairedNotebook",
+          "when": "config.jupytextSync.enabledMenus.editorContext && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions && resourceExtname != '.ipynb'"
         }
       ],
       "editor/title": [
         {
-          "command": "jupytextSync.setFormats",
+          "command": "jupytextSync.pair",
           "when": "config.jupytextSync.enabledMenus.editorTitle && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions",
+          "group": "navigation"
+        },
+        {
+          "command": "jupytextSync.openPairedNotebook",
+          "when": "config.jupytextSync.enabledMenus.editorTitle && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions && resourceExtname != '.ipynb'",
           "group": "navigation"
         }
       ],
       "editor/title/context": [
         {
-          "command": "jupytextSync.setFormats",
+          "command": "jupytextSync.pair",
           "when": "config.jupytextSync.enabledMenus.editorTitleContext && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions"
         },
         {
           "command": "jupytextSync.openPairedNotebook",
-          "when": "config.jupytextSync.enabledMenus.editorTitleContext && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions && resourceExtname != '.ipynb'",
-          "group": "navigation"
+          "when": "config.jupytextSync.enabledMenus.editorTitleContext && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions && resourceExtname != '.ipynb'"
         }
       ],
       "notebook/toolbar": [
         {
-          "command": "jupytextSync.setFormats",
+          "command": "jupytextSync.pair",
           "when": "config.jupytextSync.enabledMenus.notebookToolbar && resourceLangId && resourceExtname in jupytextSync.supportedExtensions",
+          "group": "navigation"
+        },
+        {
+          "command": "jupytextSync.openPairedNotebook",
+          "when": "config.jupytextSync.enabledMenus.notebookToolbar && resourceLangId && resourceExtname in jupytextSync.supportedExtensions && resourceExtname != '.ipynb'",
           "group": "navigation"
         },
         {
