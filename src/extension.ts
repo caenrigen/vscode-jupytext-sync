@@ -2,7 +2,6 @@ import * as vscode from "vscode"
 import {getJupytext, pickJupytext, resolveJupytext, setJupytext, Jupytext} from "./jupytext"
 import {getJConsole, config, setConfig} from "./constants"
 import {
-    setFormats,
     importJupytextFileExtensions,
     getSupportedExtensions,
     setSupportedExtensions,
@@ -142,17 +141,6 @@ async function toggleRaw() {
     return await changeToCode()
 }
 
-async function handleSelection(msg: string) {
-    const selection = await vscode.window.showErrorMessage(msg, "Select Interpreter", "Open Settings", "Show Output")
-    if (selection === "Select Interpreter") {
-        await vscode.commands.executeCommand("workbench.action.quickOpen", ">Python: Select Interpreter")
-    } else if (selection === "Open Settings") {
-        await vscode.commands.executeCommand("workbench.action.openSettings", "jupytextSync.pythonExecutable")
-    } else if (selection === "Show Output") {
-        getJConsole().show()
-    }
-}
-
 async function updateEventHandlers(context: vscode.ExtensionContext) {
     console.debug("updateEventHandlers")
 
@@ -249,7 +237,7 @@ async function updateEventHandlers(context: vscode.ExtensionContext) {
     }
 
     // Suggest compact layout on first activation
-    if (pythonPath && !context.globalState.get("hasShownCompactLayoutSuggestion")) {
+    if (getJupytext() && !context.globalState.get("hasShownCompactLayoutSuggestion")) {
         const selection = await vscode.window.showInformationMessage(
             "Jupytext Sync: Would you like to apply a recommended compact notebook layout for a better experience?",
             "Apply Layout",

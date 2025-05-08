@@ -372,12 +372,12 @@
       "notebook/toolbar": [
         {
           "command": "jupytextSync.pair",
-          "when": "config.jupytextSync.enabledMenus.notebookToolbar && resourceLangId && resourceExtname in jupytextSync.supportedExtensions",
+          "when": "config.jupytextSync.enabledMenus.notebookToolbar && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions",
           "group": "navigation"
         },
         {
           "command": "jupytextSync.openPairedNotebook",
-          "when": "config.jupytextSync.enabledMenus.notebookToolbar && resourceLangId && resourceExtname in jupytextSync.supportedExtensions && resourceExtname != '.ipynb'",
+          "when": "config.jupytextSync.enabledMenus.notebookToolbar && resourceLangId && resourceScheme == 'file' && resourceExtname in jupytextSync.supportedExtensions && resourceExtname != '.ipynb'",
           "group": "navigation"
         },
         {

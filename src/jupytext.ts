@@ -75,7 +75,7 @@ export function getSupportedExtensions(): string[] {
 }
 
 export function setSupportedExtensions(extensions: string[]): void {
-    supportedExtensions = extensions
+    supportedExtensions = extensions ?? []
 }
 
 export function getJupytext(): Jupytext | undefined {
