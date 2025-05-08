@@ -2,7 +2,7 @@
   "name": "jupytext-sync",
   "displayName": "Jupytext Sync",
   "description": "Pair and Auto Sync Jupyter Notebooks via Jupytext",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "engines": {
     "vscode": "^1.72.0"
   },
