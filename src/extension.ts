@@ -251,6 +251,8 @@ async function updateEventHandlers(context: vscode.ExtensionContext) {
 
 async function setRecommendedCompactNotebookLayout() {
     const settingsToUpdate = {
+        // important to make the global toolbar visible!
+        "notebook.globalToolbar": true,
         "notebook.output.wordWrap": true,
         "notebook.output.textLineLimit": 100,
         "notebook.cellExecutionTimeVerbosity": "verbose",
