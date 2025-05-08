@@ -5,3 +5,8 @@ node_modules
 *.vsix
 yarn.lock
 .hypothesis/
+.jupytext-sync-ipynb/
+.ipynb_checkpoints/
+.DS_Store
+*.py
+*.ipynb

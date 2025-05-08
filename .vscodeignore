@@ -11,3 +11,8 @@ src/**
 .prettierrc
 yarn.lock
 screenshot.jpg
+.jupytext-sync-ipynb/
+.ipynb_checkpoints/
+.DS_Store
+*.py
+*.ipynb
