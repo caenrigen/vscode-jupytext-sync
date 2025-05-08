@@ -140,7 +140,9 @@ export async function runJupytext(cmdArgs: string[], showError: boolean = true):
         if (!jupytext) {
             throw new Error("Jupytext not found")
         }
-        const output = await runCommand([jupytext.executable, "-m", "jupytext"].concat(cmdArgs))
+        // pass the cwd so that jupytext can pick up config files
+        const cwd = path.dirname(cmdArgs[cmdArgs.length - 1])
+        const output = await runCommand([jupytext.executable, "-m", "jupytext"].concat(cmdArgs), cwd)
         getJConsole().appendLine(output)
         return output
     } catch (ex) {
@@ -320,7 +322,9 @@ export async function readPairedFormats(filePath: string) {
         return undefined
     }
     try {
-        const formats = await runCommand([jupytext.executable, "-c", py])
+        // pass it just in case there some options affecting jupytext
+        const cwd = path.dirname(filePath)
+        const formats = await runCommand([jupytext.executable, "-c", py], cwd)
         let msg = `Read paired formats for '${filePath}': ${formats}`
         console.info(msg)
         getJConsole().appendLine(msg)
