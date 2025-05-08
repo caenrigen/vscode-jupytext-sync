@@ -426,22 +426,36 @@ function compareVersions(a: string, b: string) {
     if (!matchA || !matchB) {
         // Handle invalid version strings if necessary, or throw an error
         // For simplicity, this example pushes them to the end
-        if (!matchA && !matchB) return 0
+        if (!matchA && !matchB) {
+            return 0
+        }
         return !matchA ? 1 : -1
     }
 
     const [, majorA, minorA, patchA, rcA] = matchA.map((val, i) => (i > 0 && i < 4 ? parseInt(val, 10) : val))
     const [, majorB, minorB, patchB, rcB] = matchB.map((val, i) => (i > 0 && i < 4 ? parseInt(val, 10) : val))
 
-    if (majorA !== majorB) return (majorA as number) - (majorB as number)
-    if (minorA !== minorB) return (minorA as number) - (minorB as number)
-    if (patchA !== patchB) return (patchA as number) - (patchB as number)
+    if (majorA !== majorB) {
+        return (majorA as number) - (majorB as number)
+    }
+    if (minorA !== minorB) {
+        return (minorA as number) - (minorB as number)
+    }
+    if (patchA !== patchB) {
+        return (patchA as number) - (patchB as number)
+    }
 
     // Handle release candidates
-    if (rcA && !rcB) return -1 // rcA comes before non-rc B
-    if (!rcA && rcB) return 1 // non-rc A comes after rcB
+    if (rcA && !rcB) {
+        return -1
+    } // rcA comes before non-rc B
+    if (!rcA && rcB) {
+        return 1
+    } // non-rc A comes after rcB
     if (rcA && rcB) {
-        if (rcA === rcB) return 0
+        if (rcA === rcB) {
+            return 0
+        }
         // Extract rc numbers for comparison, e.g., "rc0" -> 0, "rc2" -> 2
         const rcNumA = parseInt((rcA as string).substring(2), 10)
         const rcNumB = parseInt((rcB as string).substring(2), 10)
