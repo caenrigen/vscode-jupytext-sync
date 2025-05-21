@@ -20,7 +20,7 @@ The extension activates when VS Code has finished starting up (`onStartupFinishe
 
 -   **Python**: You need a Python installation.
 -   **Jupytext**: The `jupytext` Python package must be installed in the Python environment used by the extension.
--   **VS Code Microsoft Python Extension (Recommended)**: For the best experience with automatic Python environment detection, it is recommended to have the [Microsoft Python extension](vscode:extension/ms-python.python) installed.
+-   **VS Code Microsoft Python Extension (Recommended)**: For the best experience with automatic Python environment detection, it is recommended to have the Microsoft Python extension installed ([open in VSCode](vscode:extension/ms-python.python) / [open on marketplace](https://marketplace.visualstudio.com/items?itemName=ms-python.python)).
 
 ## Features
 
@@ -43,7 +43,7 @@ This extension solves several common annoyances and provides handy features for 
     -   Toggle cells to raw format and back to default code. Keyboard shortcuts available.
 -   **Compact Notebook Layout**: An optional command to apply recommended VSCode settings for a more compact and user-friendly notebook layout, similar to traditional Jupyter interfaces.
 -   **Python Interpreter Flexibility**:
-    -   Attempts are made to automatically discover Python executables that are able to invoke Jupytext. If the [Microsoft Python extension](vscode:extension/ms-python.python) is installed, its selected interpreter and other discovered environments (e.g., `venv`, `conda`) are considered.
+    -   Attempts are made to automatically discover Python executables that are able to invoke Jupytext. If the Microsoft Python extension is installed ([open in VSCode](vscode:extension/ms-python.python) / [open on marketplace](https://marketplace.visualstudio.com/items?itemName=ms-python.python)), its selected interpreter and other discovered environments (e.g., `venv`, `conda`) are considered.
     -   Allows you to configure a custom Python executable path for `jupytext` if needed (via the `jupytextSync.pythonExecutable` setting).
     -   You can check the extension logs ("**Jupytext: Show Jupytext Sync Logs**" command) to see which Python environment is being used.
 
