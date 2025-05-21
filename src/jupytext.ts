@@ -208,6 +208,22 @@ export async function handleDocument(document: vscode.TextDocument | vscode.Note
         return
     }
     if (isSupportedFile(document.uri.fsPath) && document.uri.scheme === "file") {
+        const pairedFormats = await readPairedFormats(document.uri.fsPath)
+        // This fixes bug when default formats are set inside a config file e.g.
+        // project.toml:
+        // ```
+        // [tool.jupytext]
+        // formats = "ipynb,py:percent"
+        // ```
+        // and `jupytext` uses them right away even thought we never paired the file.
+        // In such cases when saving any file matching supported extensions, would get
+        // paired unintentionally.
+        if (!pairedFormats) {
+            const msg = `No paired formats in '${document.uri.fsPath}', skipping sync`
+            console.log(msg)
+            getJConsole().appendLine(msg)
+            return
+        }
         return await runJupytextSync(document.uri.fsPath)
     }
 }
@@ -325,10 +341,10 @@ export async function readPairedFormats(filePath: string) {
         // pass it just in case there some options affecting jupytext
         const cwd = path.dirname(filePath)
         const formats = await runCommand([jupytext.executable, "-c", py], cwd)
-        let msg = `Read paired formats for '${filePath}': ${formats}`
+        let msg = `Read paired formats for '${filePath}': '${formats}'`
         console.info(msg)
         getJConsole().appendLine(msg)
-        return formats
+        return formats // Will be empty string if file has no paired formats
     } catch (ex) {
         const msg = `Failed to get paired formats for '${filePath}': ${ex}`
         console.error(msg)
