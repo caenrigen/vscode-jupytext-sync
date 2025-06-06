@@ -47,8 +47,8 @@ export async function activate(context: vscode.ExtensionContext) {
     )
     context.subscriptions.push(
         vscode.commands.registerCommand(
-            "jupytextSync.setRecommendedCompactNotebookLayout",
-            setRecommendedCompactNotebookLayout,
+            "jupytextSync.setSuggestedCompactNotebookLayout",
+            setSuggestedCompactNotebookLayout,
         ),
     )
     context.subscriptions.push(vscode.commands.registerCommand("jupytextSync.showLogs", () => getJConsole().show()))
@@ -239,17 +239,21 @@ async function updateEventHandlers(context: vscode.ExtensionContext) {
     // Suggest compact layout on first activation
     if (getJupytext() && !context.globalState.get("hasShownCompactLayoutSuggestion")) {
         const selection = await vscode.window.showInformationMessage(
-            "Jupytext Sync: Would you like to apply a recommended compact notebook layout for a better experience?",
+            "Jupytext Sync: Would you like to apply a vertically compact notebook layout? " +
+                "This modifies configuration settings that do not belong to Jupytext Sync. " +
+                "It allows to fit more content on the screen. " +
+                "The 'Add New Code/Markdown' buttons will be available in the notebook toolbar. " +
+                "You can always apply this later from the command palette.",
             "Apply Layout",
         )
         if (selection === "Apply Layout") {
-            vscode.commands.executeCommand("jupytextSync.setRecommendedCompactNotebookLayout")
+            vscode.commands.executeCommand("jupytextSync.setSuggestedCompactNotebookLayout")
         }
         await context.globalState.update("hasShownCompactLayoutSuggestion", true)
     }
 }
 
-async function setRecommendedCompactNotebookLayout() {
+async function setSuggestedCompactNotebookLayout() {
     const settingsToUpdate = {
         // important to make the global toolbar visible!
         "notebook.globalToolbar": true,
@@ -268,7 +272,7 @@ async function setRecommendedCompactNotebookLayout() {
     for (const [key, value] of Object.entries(settingsToUpdate)) {
         await setConfig(key, value, vscode.ConfigurationTarget.Global)
     }
-    vscode.window.showInformationMessage("Recommended compact notebook layout settings applied.")
+    vscode.window.showInformationMessage("Suggested compact notebook layout settings applied.")
 }
 
 export function deactivate() {

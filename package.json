@@ -289,8 +289,8 @@
         "icon": "$(arrow-swap)"
       },
       {
-        "command": "jupytextSync.setRecommendedCompactNotebookLayout",
-        "title": "Set Recommended Compact Notebook Layout",
+        "command": "jupytextSync.setSuggestedCompactNotebookLayout",
+        "title": "Set Suggested Compact Notebook Layout",
         "category": "Jupytext"
       }
     ],

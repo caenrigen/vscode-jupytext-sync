@@ -41,7 +41,7 @@ This extension solves several common annoyances and provides handy features for 
 -   **Raw Cells Support in Notebooks**:
     -   Easily insert new raw cells via buttons in Notebook editor toolbar or keyboard shortcuts.
     -   Toggle cells to raw format and back to default code. Keyboard shortcuts available.
--   **Compact Notebook Layout**: An optional command to apply recommended VSCode settings for a more compact and user-friendly notebook layout, similar to traditional Jupyter interfaces.
+-   **Compact Notebook Layout**: An optional command to apply a suggested VSCode settings for a more compact notebook layout, similar to traditional Jupyter interfaces.
 -   **Python Interpreter Flexibility**:
     -   Attempts are made to automatically discover Python executables that are able to invoke Jupytext. If the Microsoft Python extension is installed ([open in VSCode](vscode:extension/ms-python.python) / [open on marketplace](https://marketplace.visualstudio.com/items?itemName=ms-python.python)), its selected interpreter and other discovered environments (e.g., `venv`, `conda`) are considered.
     -   Allows you to configure a custom Python executable path for `jupytext` if needed (via the `jupytextSync.pythonExecutable` setting).
@@ -142,7 +142,7 @@ This extension provides the following commands, accessible via the Command Palet
 -   **`Jupytext: Change Cell to default Code`**: Changes the selected notebook cell(s) to the default code type.
 -   **`Jupytext: Change Cell to Raw Code`**: Changes the selected notebook cell(s) to raw format.
 -   **`Jupytext: Toggle Cell between Raw Code and default Code`**: Toggles the selected notebook cell(s) between raw and default code formats.
--   **`Jupytext: Set Recommended Compact Notebook Layout`**: Applies a set of VS Code settings to achieve a more compact notebook UI.
+-   **`Jupytext: Set Suggested Compact Notebook Layout`**: Applies a set of VS Code settings to achieve a more compact notebook UI.
 
 ## Default Keybindings
 
