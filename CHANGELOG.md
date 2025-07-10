@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.1.5 2025-07-10
+
+-   Change compact layout to "suggested" (instead of "recommended")
+
 ## 1.1.4 2025-05-21
 
 -   Fix: don't sync files that have not been paired before
