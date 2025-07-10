@@ -243,6 +243,7 @@ async function updateEventHandlers(context: vscode.ExtensionContext) {
                 "This modifies configuration settings that do not belong to Jupytext Sync. " +
                 "It allows to fit more content on the screen. " +
                 "The 'Add New Code/Markdown' buttons will be available in the notebook toolbar. " +
+                "Undoing the compact layout requires manually changing Jupyter Notebook settings. " +
                 "You can always apply this later from the command palette.",
             "Apply Layout",
         )
