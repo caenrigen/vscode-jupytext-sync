@@ -188,8 +188,48 @@ export function getDefaultFormats(): Record<string, string> {
     return config().get<Record<string, string>>("defaultFormats", {})
 }
 
-export async function runJupytextSync(fileName: string, showError: boolean = true) {
-    return await runJupytext(["--sync", fileName], showError)
+const syncQueues = new Map<string, Promise<string | undefined>>()
+
+export async function runJupytextSync(fileName: string, showError: boolean = true): Promise<string | undefined> {
+    const normalizedPath = path.resolve(fileName)
+
+    // Create a new operation that will be added to the queue
+    const jupyterSyncFunc = async (): Promise<string | undefined> => {
+        // Generate unique timestamp-based ID for this sync operation
+        let syncId = Math.random().toString(36)
+        syncId = syncId.substring(syncId.length - 4)
+
+        console.log(`[${syncId}] Starting jupytext sync for ${fileName}`)
+        getJConsole().appendLine(`[${syncId}] Starting sync for ${fileName}`)
+
+        try {
+            const result = await runJupytext(["--sync", fileName], showError)
+            console.log(`[${syncId}] Completed jupytext sync for ${fileName}`)
+            getJConsole().appendLine(`[${syncId}] Completed sync for ${fileName}`)
+            return result
+        } catch (error) {
+            console.error(`[${syncId}] Failed jupytext sync for ${fileName}:`, error)
+            getJConsole().appendLine(`[${syncId}] Failed sync for ${fileName}: ${error}`)
+            throw error
+        }
+    }
+
+    // Get the current queue for this file (or create empty promise if none exists)
+    const currentQueue = syncQueues.get(normalizedPath) || Promise.resolve()
+
+    // Chain the new operation to run after the current queue
+    // Even if previous operation failed, continue with this one
+    const newQueue = currentQueue.then(() => jupyterSyncFunc()).catch(() => jupyterSyncFunc())
+
+    // Update the queue
+    syncQueues.set(
+        normalizedPath,
+        // Don't let failed operations break the queue
+        newQueue.catch(() => undefined),
+    )
+
+    // Return the result of this specific operation
+    return newQueue
 }
 
 export async function runJupytextSetFormats(fileName: string, formats: string) {
