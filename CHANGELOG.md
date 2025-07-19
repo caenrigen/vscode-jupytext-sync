@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.1.6 2025-07-19
+
+-   Prevent concurrency for `jupytext --sync` commands on the same file
+
 ## 1.1.5 2025-07-10
 
 -   Change compact layout to "suggested" (instead of "recommended")
