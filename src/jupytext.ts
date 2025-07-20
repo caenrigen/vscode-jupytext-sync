@@ -190,26 +190,28 @@ export function getDefaultFormats(): Record<string, string> {
 
 const syncQueues = new Map<string, Promise<string | undefined>>()
 
-export async function runJupytextSync(fileName: string, showError: boolean = true): Promise<string | undefined> {
+export async function runJupytextSync(
+    fileName: string,
+    showError: boolean = true,
+    logPrefix: string = "",
+): Promise<string | undefined> {
     const normalizedPath = path.resolve(fileName)
 
     // Create a new operation that will be added to the queue
     const jupyterSyncFunc = async (): Promise<string | undefined> => {
-        // Generate unique timestamp-based ID for this sync operation
-        let syncId = Math.random().toString(36)
-        syncId = syncId.substring(syncId.length - 4)
-
-        console.log(`[${syncId}] Starting jupytext sync for ${fileName}`)
-        getJConsole().appendLine(`[${syncId}] Starting sync for ${fileName}`)
-
+        const msg = `${logPrefix}Running jupytext sync for ${fileName}`
+        console.log(msg)
+        getJConsole().appendLine(msg)
         try {
             const result = await runJupytext(["--sync", fileName], showError)
-            console.log(`[${syncId}] Completed jupytext sync for ${fileName}`)
-            getJConsole().appendLine(`[${syncId}] Completed sync for ${fileName}`)
+            const msg = `${logPrefix}Completed jupytext sync for ${fileName}`
+            console.log(msg)
+            getJConsole().appendLine(msg)
             return result
         } catch (error) {
-            console.error(`[${syncId}] Failed jupytext sync for ${fileName}:`, error)
-            getJConsole().appendLine(`[${syncId}] Failed sync for ${fileName}: ${error}`)
+            const msg = `${logPrefix}Failed jupytext sync for ${fileName}: ${error}`
+            console.error(msg)
+            getJConsole().appendLine(msg)
             throw error
         }
     }
@@ -241,14 +243,26 @@ export function isSupportedFile(fileName: string): boolean {
     return supportedExtensions.includes(ext)
 }
 
-export async function handleDocument(document: vscode.TextDocument | vscode.NotebookDocument) {
+export async function handleDocument(
+    document: vscode.TextDocument | vscode.NotebookDocument,
+    eventName: string,
+) {
+    let eventId = Math.random().toString(36)
+    eventId = eventId.substring(eventId.length - 4)
+    const logPrefix = `${eventName},${eventId}: `
+
     const jupytext = getJupytext()
     if (!jupytext) {
-        console.error("handleDocument: Jupytext not set")
+        const msg = `${logPrefix}Jupytext not set`
+        console.error(msg)
+        getJConsole().appendLine(msg)
         return
     }
     if (isSupportedFile(document.uri.fsPath) && document.uri.scheme === "file") {
-        const pairedFormats = await readPairedFormats(document.uri.fsPath)
+        const msg = `${logPrefix}${document.uri.fsPath}`
+        console.log(msg)
+        getJConsole().appendLine(msg)
+        const pairedFormats = await readPairedFormats(document.uri.fsPath, logPrefix)
         // This fixes bug when default formats are set inside a config file e.g.
         // project.toml:
         // ```
@@ -259,12 +273,12 @@ export async function handleDocument(document: vscode.TextDocument | vscode.Note
         // In such cases when saving any file matching supported extensions, would get
         // paired unintentionally.
         if (!pairedFormats) {
-            const msg = `No paired formats in '${document.uri.fsPath}', skipping sync`
+            const msg = `${logPrefix}No paired formats in '${document.uri.fsPath}', skipping sync`
             console.log(msg)
             getJConsole().appendLine(msg)
             return
         }
-        return await runJupytextSync(document.uri.fsPath)
+        return await runJupytextSync(document.uri.fsPath, true, logPrefix)
     }
 }
 
@@ -368,11 +382,11 @@ export async function pair(fileUri?: vscode.Uri) {
     return await setFormats(fileUri, config().get<boolean>("askFormats.onPairDocuments", true), undefined)
 }
 
-export async function readPairedFormats(filePath: string) {
+export async function readPairedFormats(filePath: string, logPrefix: string = "") {
     const py = `import jupytext; print(jupytext.read('${filePath}').metadata.get('jupytext', {}).get('formats', ''))`
     const jupytext = getJupytext()
     if (!jupytext) {
-        const msg = `Jupytext not set, cannot get paired formats for '${filePath}'`
+        const msg = `${logPrefix}Jupytext not set, cannot get paired formats for '${filePath}'`
         console.error(msg)
         getJConsole().appendLine(msg)
         return undefined
@@ -381,12 +395,12 @@ export async function readPairedFormats(filePath: string) {
         // pass it just in case there some options affecting jupytext
         const cwd = path.dirname(filePath)
         const formats = await runCommand([jupytext.executable, "-c", py], cwd)
-        let msg = `Read paired formats for '${filePath}': '${formats}'`
+        let msg = `${logPrefix}Read paired formats for '${filePath}': '${formats}'`
         console.info(msg)
         getJConsole().appendLine(msg)
         return formats // Will be empty string if file has no paired formats
     } catch (ex) {
-        const msg = `Failed to get paired formats for '${filePath}': ${ex}`
+        const msg = `${logPrefix}Failed to get paired formats for '${filePath}': ${ex}`
         console.error(msg)
         getJConsole().appendLine(msg)
         return undefined

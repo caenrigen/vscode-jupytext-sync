@@ -162,7 +162,7 @@ async function updateEventHandlers(context: vscode.ExtensionContext) {
         }
     }
 
-    // First launch or bad python/jupytext, try to set it automatically
+    // First launch (or bad python/jupytext), try to set it automatically
     if (!pythonPath) {
         const jupytext = await pickJupytext()
         if (jupytext) {
@@ -180,7 +180,8 @@ async function updateEventHandlers(context: vscode.ExtensionContext) {
                 "create an issue on [GitHub](https://github.com/caenrigen/vscode-jupytext-sync/issues)."
             const selection = await vscode.window.showErrorMessage(messageSettings, "Open Settings", "Show Logs")
             if (selection === "Open Settings") {
-                vscode.commands.executeCommand("workbench.action.openSettings", "jupytextSync.pythonExecutable") // don't await
+                // don't await
+                vscode.commands.executeCommand("workbench.action.openSettings", "jupytextSync.pythonExecutable")
             } else if (selection === "Show Logs") {
                 getJConsole().show()
             }
@@ -218,22 +219,40 @@ async function updateEventHandlers(context: vscode.ExtensionContext) {
 
     // Register new handlers based on current configuration
     if (syncDocuments.onTextDocumentOpen) {
-        disposables.push(vscode.workspace.onDidOpenTextDocument(handleDocument))
+        disposables.push(
+            vscode.workspace.onDidOpenTextDocument((document) => handleDocument(document, "onDidOpenTextDocument")),
+        )
     }
     if (syncDocuments.onTextDocumentSave) {
-        disposables.push(vscode.workspace.onDidSaveTextDocument(handleDocument))
+        disposables.push(
+            vscode.workspace.onDidSaveTextDocument((document) => handleDocument(document, "onDidSaveTextDocument")),
+        )
     }
     if (syncDocuments.onTextDocumentClose) {
-        disposables.push(vscode.workspace.onDidCloseTextDocument(handleDocument))
+        disposables.push(
+            vscode.workspace.onDidCloseTextDocument((document) => handleDocument(document, "onDidCloseTextDocument")),
+        )
     }
     if (syncDocuments.onNotebookDocumentOpen) {
-        disposables.push(vscode.workspace.onDidOpenNotebookDocument(handleDocument))
+        disposables.push(
+            vscode.workspace.onDidOpenNotebookDocument((document) =>
+                handleDocument(document, "onDidOpenNotebookDocument"),
+            ),
+        )
     }
     if (syncDocuments.onNotebookDocumentSave) {
-        disposables.push(vscode.workspace.onDidSaveNotebookDocument(handleDocument))
+        disposables.push(
+            vscode.workspace.onDidSaveNotebookDocument((document) =>
+                handleDocument(document, "onDidSaveNotebookDocument"),
+            ),
+        )
     }
     if (syncDocuments.onNotebookDocumentClose) {
-        disposables.push(vscode.workspace.onDidCloseNotebookDocument(handleDocument))
+        disposables.push(
+            vscode.workspace.onDidCloseNotebookDocument((document) =>
+                handleDocument(document, "onDidCloseNotebookDocument"),
+            ),
+        )
     }
 
     // Suggest compact layout on first activation
