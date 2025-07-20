@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.1.7 2025-07-20
+
+-   Add support for `${workspaceFolder}` in `pythonExecutable`
+
 ## 1.1.6 2025-07-19
 
 -   Prevent concurrency for `jupytext --sync` commands on the same file
