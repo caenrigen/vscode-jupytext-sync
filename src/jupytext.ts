@@ -106,8 +106,8 @@ export async function getAvailableVersions(): Promise<Jupytext[]> {
     const pythonPaths = await getPythonPaths()
     const versions = await Promise.all(pythonPaths.map(resolveJupytext))
     let msg = "Verifying Jupytext versions:\n"
-    for (const v of versions) {
-        msg += `Option: ${v}`
+    for (const {python, executable, jupytextVersion} of versions) {
+        msg += `Option: ${python} (${executable}) jupytext=${jupytextVersion}\n`
     }
     console.log(msg)
     getJConsole().appendLine(msg)
@@ -243,10 +243,7 @@ export function isSupportedFile(fileName: string): boolean {
     return supportedExtensions.includes(ext)
 }
 
-export async function handleDocument(
-    document: vscode.TextDocument | vscode.NotebookDocument,
-    eventName: string,
-) {
+export async function handleDocument(document: vscode.TextDocument | vscode.NotebookDocument, eventName: string) {
     let eventId = Math.random().toString(36)
     eventId = eventId.substring(eventId.length - 4)
     const logPrefix = `${eventName},${eventId}: `
