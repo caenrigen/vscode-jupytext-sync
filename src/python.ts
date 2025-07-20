@@ -4,8 +4,31 @@ import * as vscode from "vscode"
 import {PythonExtension} from "@vscode/python-extension"
 import {getJConsole, config} from "./constants"
 
-export async function getPythonFromConfig(): Promise<string | undefined> {
-    return config().get<string>("pythonExecutable") ?? undefined
+export function getPythonFromConfig(): string | undefined {
+    let pythonExecutable = config().get<string>("pythonExecutable") ?? undefined
+    if (!pythonExecutable) {
+        return undefined
+    }
+    /*
+    Refs:
+    Canonical variables:
+    https://code.visualstudio.com/docs/reference/variables-reference
+    VSCode does not provide an API to expand variables:
+    https://github.com/microsoft/vscode/issues/46471
+    A more elaborate implementation:
+    https://github.com/sqlfluff/vscode-sqlfluff/blob/4e77e64d341ee54732139102997c1236ab43b134/src/features/helper/utilities.ts#L17-L30
+    Potential package to use:
+    https://github.com/DominicVonk/vscode-variables
+    */
+    // For now keep it simple.
+    if (pythonExecutable.includes("${workspaceFolder}")) {
+        pythonExecutable = pythonExecutable.replace(
+            "${workspaceFolder}",
+            vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? "",
+        )
+        console.log("pythonExecutable", pythonExecutable)
+    }
+    return pythonExecutable
 }
 
 export async function resolvePythonExecutable(command: string[]): Promise<string | undefined> {

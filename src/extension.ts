@@ -9,6 +9,7 @@ import {
     openPairedNotebook,
     pair,
 } from "./jupytext"
+import {getPythonFromConfig} from "./python"
 
 // Store disposables for event handlers so we can manage them
 let disposables: vscode.Disposable[] = []
@@ -144,20 +145,18 @@ async function toggleRaw() {
 async function updateEventHandlers(context: vscode.ExtensionContext) {
     console.debug("updateEventHandlers")
 
-    let pythonPath = config().get<string>("pythonExecutable") ?? undefined
+    let pythonPath = getPythonFromConfig()
     setJupytext(undefined) // reset runtime jupytext
 
+    // TODO: add config to disable automatic python/Jupytext resolution on launch
     if (pythonPath) {
         const jupytext = await resolveJupytext(pythonPath)
         if (jupytext.executable && jupytext.jupytextVersion) {
             setJupytext(jupytext as Jupytext, false)
         } else {
-            const msg =
-                `Could not invoke Jupytext with the python executable '${pythonPath}'. ` +
-                "Will attempt to locate a suitable Python executable automatically."
+            const msg = `Could not invoke Jupytext with the python executable '${pythonPath}'.`
             console.warn(msg)
             getJConsole().appendLine(msg)
-            pythonPath = undefined
             vscode.window.showWarningMessage(msg) // don't await
         }
     }
