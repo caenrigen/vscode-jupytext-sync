@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.1.8 2025-08-11
+
+-   Enhance logs with timestamps and sync ID
+
 ## 1.1.7 2025-07-20
 
 -   Add support for `${workspaceFolder}` in `pythonExecutable`

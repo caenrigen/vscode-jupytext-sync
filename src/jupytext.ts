@@ -134,7 +134,19 @@ export async function resolveJupytext(pythonPath: string): Promise<MaybeJupytext
     return {python: pythonPath, executable, jupytextVersion}
 }
 
-export async function runJupytext(cmdArgs: string[], showError: boolean = true): Promise<string | undefined> {
+const injectTimestamp = (module: string, prefix: string = "") =>
+    "import sys,runpy,time; " +
+    "ow1=sys.stdout.write; " +
+    `sys.stdout.write=lambda s,ow=ow1: ow(''.join(f'${prefix}{time.time():.6f} {l}' for l in s.splitlines(True))); ` +
+    "ow2=sys.stderr.write; " +
+    `sys.stderr.write=lambda s,ow=ow2: ow(''.join(f'${prefix}{time.time():.6f} {l}' for l in s.splitlines(True))); ` +
+    `runpy.run_module('${module}', run_name='__main__')`
+
+export async function runJupytext(
+    cmdArgs: string[],
+    showError: boolean = true,
+    logPrefix: string = "",
+): Promise<string | undefined> {
     try {
         const jupytext = getJupytext()
         if (!jupytext) {
@@ -142,7 +154,9 @@ export async function runJupytext(cmdArgs: string[], showError: boolean = true):
         }
         // pass the cwd so that jupytext can pick up config files
         const cwd = path.dirname(cmdArgs[cmdArgs.length - 1])
-        const output = await runCommand([jupytext.executable, "-m", "jupytext"].concat(cmdArgs), cwd)
+        // const cmdBase = [jupytext.executable, "-m", "jupytext"]
+        const cmdBase = [jupytext.executable, "-c", injectTimestamp("jupytext", logPrefix)]
+        const output = await runCommand(cmdBase.concat(cmdArgs), cwd)
         getJConsole().appendLine(output)
         return output
     } catch (ex) {
@@ -203,7 +217,7 @@ export async function runJupytextSync(
         console.log(msg)
         getJConsole().appendLine(msg)
         try {
-            const result = await runJupytext(["--sync", fileName], showError)
+            const result = await runJupytext(["--sync", fileName], showError, logPrefix)
             const msg = `${logPrefix}Completed jupytext sync for ${fileName}`
             console.log(msg)
             getJConsole().appendLine(msg)
