@@ -8,6 +8,7 @@ import {
     handleDocument,
     openPairedNotebook,
     pair,
+    refreshCliArgsFromConfig,
 } from "./jupytext"
 import {getPythonFromConfig} from "./python"
 
@@ -23,7 +24,9 @@ export async function activate(context: vscode.ExtensionContext) {
             console.debug("onDidChangeConfiguration")
             if (
                 e.affectsConfiguration("jupytextSync.syncDocuments") ||
-                e.affectsConfiguration("jupytextSync.pythonExecutable")
+                e.affectsConfiguration("jupytextSync.pythonExecutable") ||
+                e.affectsConfiguration("jupytextSync.extraSetFormatsArgs") ||
+                e.affectsConfiguration("jupytextSync.extraSyncArgs")
             ) {
                 await updateEventHandlers(context)
             }
@@ -144,6 +147,9 @@ async function toggleRaw() {
 
 async function updateEventHandlers(context: vscode.ExtensionContext) {
     console.debug("updateEventHandlers")
+
+    // Always refresh extra CLI args cache from config
+    refreshCliArgsFromConfig()
 
     let pythonPath = getPythonFromConfig()
     setJupytext(undefined) // reset runtime jupytext

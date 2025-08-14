@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.1.9 2025-08-14
+
+-   Add settings to pass extra CLI arguments to Jupytext commands:
+    -   `jupytextSync.extraSyncArgs` for `jupytext --sync` (e.g., `--use-source-timestamp`)
+    -   `jupytextSync.extraSetFormatsArgs` for `jupytext --set-formats`
+-   Logs now print an abbreviated executed `jupytext` command for easier troubleshooting
+
 ## 1.1.8 2025-08-11
 
 -   Enhance logs with timestamps and sync ID

@@ -230,6 +230,26 @@
             }
           },
           "markdownDescription": "Enable or disable Jupytext menus and buttons"
+        },
+        "jupytextSync.extraSetFormatsArgs": {
+          "type": "array",
+          "order": 5,
+          "items": {
+            "type": "string",
+            "description": "Argument key/flag to pass"
+          },
+          "default": [],
+          "markdownDescription": "Additional command-line arguments appended to the `jupytext --set-formats` invocation before the file path. The order is preserved."
+        },
+        "jupytextSync.extraSyncArgs": {
+          "type": "array",
+          "order": 6,
+          "items": {
+            "type": "string",
+            "description": "Argument key/flag to pass"
+          },
+          "default": [],
+          "markdownDescription": "Additional command-line arguments appended to the `jupytext --sync` invocation before the file path (e.g., `--use-source-timestamp`). The order is preserved."
         }
       }
     },

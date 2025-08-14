@@ -152,6 +152,8 @@ export async function runJupytext(
         if (!jupytext) {
             throw new Error("Jupytext not found")
         }
+        const cmdLog = ["jupytext", ...cmdArgs].join(" ")
+        getJConsole().appendLine(`Executing (abbreviated): ${cmdLog}`)
         // pass the cwd so that jupytext can pick up config files
         const cwd = path.dirname(cmdArgs[cmdArgs.length - 1])
         // const cmdBase = [jupytext.executable, "-m", "jupytext"]
@@ -202,6 +204,41 @@ export function getDefaultFormats(): Record<string, string> {
     return config().get<Record<string, string>>("defaultFormats", {})
 }
 
+// Cached extra CLI args for jupytext commands
+let cachedSetFormatsCliArgs: string[] = []
+let cachedSyncCliArgs: string[] = []
+
+export function refreshCliArgsFromConfig(): void {
+    try {
+        const setFormatsItems = config().get<string[]>("extraSetFormatsArgs", [])
+        const syncItems = config().get<string[]>("extraSyncArgs", [])
+        cachedSetFormatsCliArgs = (setFormatsItems || []).filter((s) => typeof s === "string" && s.trim() !== "")
+        cachedSyncCliArgs = (syncItems || []).filter((s) => typeof s === "string" && s.trim() !== "")
+        const msg =
+            "Loaded extra CLI args - setFormats: [" +
+            cachedSetFormatsCliArgs.join(" ") +
+            "] sync: [" +
+            cachedSyncCliArgs.join(" ") +
+            "]"
+        console.debug(msg)
+        getJConsole().appendLine(msg)
+    } catch (ex) {
+        const msg = `Failed to load extra CLI args from config: ${ex}`
+        console.error(msg)
+        getJConsole().appendLine(msg)
+        cachedSetFormatsCliArgs = []
+        cachedSyncCliArgs = []
+    }
+}
+
+function getSetFormatsExtraArgs(): string[] {
+    return cachedSetFormatsCliArgs
+}
+
+function getSyncExtraArgs(): string[] {
+    return cachedSyncCliArgs
+}
+
 const syncQueues = new Map<string, Promise<string | undefined>>()
 
 export async function runJupytextSync(
@@ -217,7 +254,8 @@ export async function runJupytextSync(
         console.log(msg)
         getJConsole().appendLine(msg)
         try {
-            const result = await runJupytext(["--sync", fileName], showError, logPrefix)
+            const extraArgs = getSyncExtraArgs()
+            const result = await runJupytext(["--sync", ...extraArgs, fileName], showError, logPrefix)
             const msg = `${logPrefix}Completed jupytext sync for ${fileName}`
             console.log(msg)
             getJConsole().appendLine(msg)
@@ -249,7 +287,8 @@ export async function runJupytextSync(
 }
 
 export async function runJupytextSetFormats(fileName: string, formats: string) {
-    return await runJupytext(["--set-formats", formats, fileName])
+    const extraArgs = getSetFormatsExtraArgs()
+    return await runJupytext(["--set-formats", formats, ...extraArgs, fileName])
 }
 
 export function isSupportedFile(fileName: string): boolean {
