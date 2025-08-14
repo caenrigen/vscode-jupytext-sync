@@ -210,8 +210,8 @@ let cachedSyncCliArgs: string[] = []
 
 export function refreshCliArgsFromConfig(): void {
     try {
-        const setFormatsItems = config().get<string[]>("extraSetFormatsArgs", [])
-        const syncItems = config().get<string[]>("extraSyncArgs", [])
+        const setFormatsItems = config().get<string[]>("setFormatsArgs", [])
+        const syncItems = config().get<string[]>("syncArgs", [])
         cachedSetFormatsCliArgs = (setFormatsItems || []).filter((s) => typeof s === "string" && s.trim() !== "")
         cachedSyncCliArgs = (syncItems || []).filter((s) => typeof s === "string" && s.trim() !== "")
         const msg =
@@ -231,11 +231,18 @@ export function refreshCliArgsFromConfig(): void {
     }
 }
 
-function getSetFormatsExtraArgs(): string[] {
-    return cachedSetFormatsCliArgs
+function getSetFormatsArgs(formats: string): string[] {
+    const args = [...cachedSetFormatsCliArgs]
+    const idx = args.indexOf("--set-formats")
+    if (idx !== -1) {
+        const withInserted = args.slice()
+        withInserted.splice(idx + 1, 0, formats)
+        return withInserted
+    }
+    return args
 }
 
-function getSyncExtraArgs(): string[] {
+function getSyncArgs(): string[] {
     return cachedSyncCliArgs
 }
 
@@ -254,8 +261,7 @@ export async function runJupytextSync(
         console.log(msg)
         getJConsole().appendLine(msg)
         try {
-            const extraArgs = getSyncExtraArgs()
-            const result = await runJupytext(["--sync", ...extraArgs, fileName], showError, logPrefix)
+            const result = await runJupytext([...getSyncArgs(), fileName], showError, logPrefix)
             const msg = `${logPrefix}Completed jupytext sync for ${fileName}`
             console.log(msg)
             getJConsole().appendLine(msg)
@@ -287,8 +293,7 @@ export async function runJupytextSync(
 }
 
 export async function runJupytextSetFormats(fileName: string, formats: string) {
-    const extraArgs = getSetFormatsExtraArgs()
-    return await runJupytext(["--set-formats", formats, ...extraArgs, fileName])
+    return await runJupytext([...getSetFormatsArgs(formats), fileName])
 }
 
 export function isSupportedFile(fileName: string): boolean {

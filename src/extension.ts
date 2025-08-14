@@ -25,8 +25,8 @@ export async function activate(context: vscode.ExtensionContext) {
             if (
                 e.affectsConfiguration("jupytextSync.syncDocuments") ||
                 e.affectsConfiguration("jupytextSync.pythonExecutable") ||
-                e.affectsConfiguration("jupytextSync.extraSetFormatsArgs") ||
-                e.affectsConfiguration("jupytextSync.extraSyncArgs")
+                e.affectsConfiguration("jupytextSync.setFormatsArgs") ||
+                e.affectsConfiguration("jupytextSync.syncArgs")
             ) {
                 await updateEventHandlers(context)
             }

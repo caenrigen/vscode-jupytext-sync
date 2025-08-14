@@ -107,13 +107,13 @@ You can configure the extension's behavior via VSCode settings (search for `jupy
     -   **Activation**: Applies to file extensions recognized by your installed `jupytext`.
     -   **Example Default Entry**: `"default": ".jupytext-sync-ipynb//ipynb,${ext}:percent"`
 
--   **`jupytextSync.extraSetFormatsArgs`**:
+-   **`jupytextSync.setFormatsArgs`**:
 
     -   **Description**: Additional command-line arguments appended to the `jupytext --set-formats` invocation before the file path. The order is preserved.
     -   **Examples**: `[]`, `["--some-flag"]`
     -   **Default**: `[]`
 
--   **`jupytextSync.extraSyncArgs`**:
+-   **`jupytextSync.syncArgs`**:
 
     -   **Description**: Additional command-line arguments appended to the `jupytext --sync` invocation before the file path. The order is preserved.
     -   **Example**: `["--use-source-timestamp"]`
