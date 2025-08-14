@@ -109,15 +109,15 @@ You can configure the extension's behavior via VSCode settings (search for `jupy
 
 -   **`jupytextSync.setFormatsArgs`**:
 
-    -   **Description**: Additional command-line arguments appended to the `jupytext --set-formats` invocation before the file path. The order is preserved.
-    -   **Examples**: `[]`, `["--some-flag"]`
-    -   **Default**: `[]`
+    -   **Description**: Customization for the command-line arguments of `jupytext --set-formats` invocation. The order is preserved.
+    -   **Examples**: `["--set-formats"]`, `["--set-formats", "--some-flag"]`
+    -   **Default**: `["--set-formats"]`
 
 -   **`jupytextSync.syncArgs`**:
 
-    -   **Description**: Additional command-line arguments appended to the `jupytext --sync` invocation before the file path. The order is preserved.
-    -   **Example**: `["--use-source-timestamp"]`
-    -   **Default**: `[]`
+    -   **Description**: Customization for the command-line arguments of `jupytext --sync` invocation. The order is preserved.
+    -   **Example**: `["--sync", "--use-source-timestamp"]`
+    -   **Default**: `["--sync"]`
 
 -   **`jupytextSync.enabledMenus`**:
     -   **Description**: Enable or disable Jupytext menus and buttons in various VS Code UI locations.

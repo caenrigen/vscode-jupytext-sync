@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.1.10 2025-08-14
+
+-   Rename `extraSetFormatsArgs`/`extraSyncArgs` to `setFormatsArgs`/`syncArgs`
+-   This change allows arbitrary user-defined arguments order
+
 ## 1.1.9 2025-08-14
 
 -   Add settings to pass extra CLI arguments to Jupytext commands:

@@ -241,7 +241,7 @@
           "default": [
             "--set-formats"
           ],
-          "markdownDescription": "Additional command-line arguments appended to the `jupytext --set-formats` invocation before the file path. The order is preserved."
+          "markdownDescription": "Command-line arguments of `jupytext --set-formats` invocation (e.g., `--set-formats, --some-flag`). The order is preserved. Formats are inserted after the `--set-formats` flag (if present)."
         },
         "jupytextSync.syncArgs": {
           "type": "array",
@@ -253,7 +253,7 @@
           "default": [
             "--sync"
           ],
-          "markdownDescription": "Additional command-line arguments appended to the `jupytext --sync` invocation before the file path (e.g., `--use-source-timestamp`). The order is preserved."
+          "markdownDescription": "Command-line arguments of `jupytext --sync` invocation (e.g., `--sync, --use-source-timestamp`). The order is preserved."
         }
       }
     },
