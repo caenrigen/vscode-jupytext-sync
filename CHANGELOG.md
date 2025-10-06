@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.2.0 2025-19-06
+
+-   Enhance support for Jupytext `v1.17.3`. Use of Jupytext `<=v1.17.2` is deprecated.
+-   Enhanced support of Jupytext config files when using Jupytext `v1.17.3`+.
+
 ## 1.1.11 2025-19-06
 
 -   Disable the compact layout suggestion pop up. This feature will eventually moved into a separate extension. The command can still be invoked from the command palette.

@@ -100,6 +100,16 @@ export function setJupytext(jupytext: Jupytext | undefined, showMessage: boolean
     if (showMessage) {
         vscode.window.showInformationMessage(msg) // don't await
     }
+    const vMin = "1.17.3"
+    if (compareVersions(jupytext.jupytextVersion, vMin) < 0) {
+        const msg =
+            `Jupytext version ${jupytext.jupytextVersion} < ${vMin}. ` +
+            `Upgrade to Jupytext ${vMin}+ for best experience. ` +
+            "Older versions are not well supported, " +
+            "please do not report issues if you are using an outdated Jupytext version."
+        console.log(msg)
+        getJConsole().appendLine(msg)
+    }
 }
 
 export async function getAvailableVersions(): Promise<Jupytext[]> {
@@ -317,21 +327,27 @@ export async function handleDocument(document: vscode.TextDocument | vscode.Note
         const msg = `${logPrefix}${document.uri.fsPath}`
         console.log(msg)
         getJConsole().appendLine(msg)
-        const pairedFormats = await readPairedFormats(document.uri.fsPath, logPrefix)
-        // This fixes bug when default formats are set inside a config file e.g.
-        // project.toml:
-        // ```
-        // [tool.jupytext]
-        // formats = "ipynb,py:percent"
-        // ```
-        // and `jupytext` uses them right away even thought we never paired the file.
-        // In such cases, when saving any file matching supported file extensions,
-        // some files will be paired unintentionally.
-        if (!pairedFormats) {
-            const msg = `${logPrefix}No paired formats in '${document.uri.fsPath}', skipping sync`
+        const vMin = "1.17.3"
+        if (compareVersions(jupytext.jupytextVersion, vMin) < 0) {
+            const msg = `${logPrefix}Jupytext ${jupytext.jupytextVersion} < ${vMin} workaround: check paired formats...`
             console.log(msg)
             getJConsole().appendLine(msg)
-            return
+            // This fixes a bug when default formats are set inside a config file e.g.
+            // pyproject.toml:
+            // ```
+            // [tool.jupytext]
+            // formats = "ipynb,py:percent"
+            // ```
+            // and `jupytext` uses them right away even thought we never paired the file.
+            // In such cases, when saving any file matching supported file extensions,
+            // some files will be paired unintentionally.
+            const pairedFormats = await readPairedFormats(document.uri.fsPath, logPrefix)
+            if (!pairedFormats) {
+                const msg = `${logPrefix}No paired formats in '${document.uri.fsPath}', skipping sync`
+                console.log(msg)
+                getJConsole().appendLine(msg)
+                return
+            }
         }
         return await runJupytextSync(document.uri.fsPath, true, logPrefix)
     }
@@ -438,7 +454,6 @@ export async function pair(fileUri?: vscode.Uri) {
 }
 
 export async function readPairedFormats(filePath: string, logPrefix: string = "") {
-    const py = `import jupytext; print(jupytext.read('${filePath}').metadata.get('jupytext', {}).get('formats', ''))`
     const jupytext = getJupytext()
     if (!jupytext) {
         const msg = `${logPrefix}Jupytext not set, cannot get paired formats for '${filePath}'`
@@ -446,8 +461,19 @@ export async function readPairedFormats(filePath: string, logPrefix: string = ""
         getJConsole().appendLine(msg)
         return undefined
     }
+    let py = ""
+    const vMin = "1.17.3"
+    if (compareVersions(jupytext.jupytextVersion, vMin) < 0) {
+        py = `import jupytext; print(jupytext.read('${filePath}').metadata.get('jupytext', {}).get('formats', ''))`
+    } else {
+        // For Jupytext 1.17.3+, get_formats_from_notebook_path returns a dictionary.
+        // E.g. [{'extension': '.ipynb'}, {'format_name': 'percent', 'extension': '.py'}].
+        // This Python code joins the extension and format name into a string to keep
+        // the same format as before.
+        py = `from jupytext.jupytext import get_formats_from_notebook_path;fmts = get_formats_from_notebook_path("${filePath}");fmts = [] if len(fmts) == 1 else fmts; print(",".join(f"{fmt.get('extension')[1:]}{':' + fmt.get('format_name', '') if fmt.get('format_name', None) else ''}" for fmt in fmts))`
+    }
     try {
-        // pass it just in case there some options affecting jupytext
+        // for options affecting jupytext based on config files
         const cwd = path.dirname(filePath)
         const formats = await runCommand([jupytext.executable, "-c", py], cwd)
         let msg = `${logPrefix}Read paired formats for '${filePath}': '${formats}'`
