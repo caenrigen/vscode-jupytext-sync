@@ -261,21 +261,23 @@ async function updateEventHandlers(context: vscode.ExtensionContext) {
     }
 
     // Suggest compact layout on first activation
-    if (getJupytext() && !context.globalState.get("hasShownCompactLayoutSuggestion")) {
-        const selection = await vscode.window.showInformationMessage(
-            "Jupytext Sync: Would you like to apply a vertically compact notebook layout? " +
-                "This modifies configuration settings that do not belong to Jupytext Sync. " +
-                "It allows to fit more content on the screen. " +
-                "The 'Add New Code/Markdown' buttons will be available in the notebook toolbar. " +
-                "Undoing the compact layout requires manually changing Jupyter Notebook settings. " +
-                "You can always apply this later from the command palette.",
-            "Apply Layout",
-        )
-        if (selection === "Apply Layout") {
-            vscode.commands.executeCommand("jupytextSync.setSuggestedCompactNotebookLayout")
-        }
-        await context.globalState.update("hasShownCompactLayoutSuggestion", true)
-    }
+    // Commented because several people complained about it.
+    // Eventually all UI related settings will be moved to a separate extension.
+    // if (getJupytext() && !context.globalState.get("hasShownCompactLayoutSuggestion")) {
+    //     const selection = await vscode.window.showInformationMessage(
+    //         "Jupytext Sync: Would you like to apply a vertically compact notebook layout? " +
+    //             "This modifies configuration settings that do not belong to Jupytext Sync. " +
+    //             "It allows to fit more content on the screen. " +
+    //             "The 'Add New Code/Markdown' buttons will be available in the notebook toolbar. " +
+    //             "Undoing the compact layout requires manually changing Jupyter Notebook settings. " +
+    //             "You can always apply this later from the command palette.",
+    //         "Apply Layout",
+    //     )
+    //     if (selection === "Apply Layout") {
+    //         vscode.commands.executeCommand("jupytextSync.setSuggestedCompactNotebookLayout")
+    //     }
+    //     await context.globalState.update("hasShownCompactLayoutSuggestion", true)
+    // }
 }
 
 async function setSuggestedCompactNotebookLayout() {

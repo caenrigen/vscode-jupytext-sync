@@ -325,8 +325,8 @@ export async function handleDocument(document: vscode.TextDocument | vscode.Note
         // formats = "ipynb,py:percent"
         // ```
         // and `jupytext` uses them right away even thought we never paired the file.
-        // In such cases when saving any file matching supported extensions, would get
-        // paired unintentionally.
+        // In such cases, when saving any file matching supported file extensions,
+        // some files will be paired unintentionally.
         if (!pairedFormats) {
             const msg = `${logPrefix}No paired formats in '${document.uri.fsPath}', skipping sync`
             console.log(msg)

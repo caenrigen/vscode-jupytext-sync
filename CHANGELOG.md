@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.1.11 2025-19-06
+
+-   Disable the compact layout suggestion pop up. This feature will eventually moved into a separate extension. The command can still be invoked from the command palette.
+
 ## 1.1.10 2025-08-14
 
 -   Rename `extraSetFormatsArgs`/`extraSyncArgs` to `setFormatsArgs`/`syncArgs`
