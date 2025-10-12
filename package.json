@@ -132,10 +132,10 @@
             "type": "string"
           },
           "default": {
-            "default": ".jupytext-sync-ipynb//ipynb,${ext}:percent",
+            "default": "ipynb,${ext}:percent",
             ".ipynb": "ipynb,py:percent",
-            ".md": ".jupytext-sync-ipynb//ipynb,md:markdown",
-            ".markdown": ".jupytext-sync-ipynb//ipynb,markdown:markdown",
+            ".md": "ipynb,md:markdown",
+            ".markdown": "ipynb,markdown:markdown",
             ".Rmd": "default",
             ".py": "default",
             ".coco": "default",

@@ -105,7 +105,7 @@ You can configure the extension's behavior via VSCode settings (search for `jupy
         -   `default` key: An extension set to `"default"` in the configuration will inherit the format string from this key.
         -   Subdirectories: Prefix with `dir_name//` (e.g., `notebooks//ipynb,scripts//py:percent`). Paths are relative to the source file's parent directory.
     -   **Activation**: Applies to file extensions recognized by your installed `jupytext`.
-    -   **Example Default Entry**: `"default": ".jupytext-sync-ipynb//ipynb,${ext}:percent"`
+    -   **Example Default Entry**: `"default": "ipynb,${ext}:percent"`
 
 -   **`jupytextSync.setFormatsArgs`**:
 

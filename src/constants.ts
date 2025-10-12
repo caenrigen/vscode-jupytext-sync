@@ -1,6 +1,8 @@
 import * as vscode from "vscode"
 
-export const defaultNotebookDir = ".jupytext-sync-ipynb"
+// Disabled for now. See https://github.com/caenrigen/vscode-jupytext-sync/issues/20
+// export const defaultNotebookDir = ".jupytext-sync-ipynb"
+export const defaultNotebookDir = ""
 
 export function config(section?: string): vscode.WorkspaceConfiguration {
     return vscode.workspace.getConfiguration(section ?? "jupytextSync")

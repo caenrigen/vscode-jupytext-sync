@@ -386,9 +386,10 @@ function getSuggestedFormats(filePath: string) {
     let suggestFormats = defaultFormats[ext] || "default"
     ext = ext.slice(1)
     if (suggestFormats === "default") {
-        let fallback = `${defaultNotebookDir}//ipynb,${ext}:percent`
+        const notebookFormat = defaultNotebookDir ? `${defaultNotebookDir}//ipynb` : "ipynb"
+        let fallback = `${notebookFormat},${ext}:percent`
         if (ext === "ipynb") {
-            fallback = `${defaultNotebookDir}//ipynb,py:percent`
+            fallback = `${notebookFormat},py:percent`
         }
         suggestFormats = defaultFormats["default"] || fallback
     }
@@ -418,7 +419,7 @@ export async function setFormats(
             prompt:
                 `Define formats to pair with this ${fType}. Jupytext uses this to sync paired files. ` +
                 "Example: 'ipynb,py:percent'. Use commas for multiple entries (e.g., 'md,py:percent'). " +
-                `Formats can also specify subdirectories (e.g., '${defaultNotebookDir}//ipynb,scripts//py:percent,md'). ` +
+                `Formats can also specify subdirectories (e.g., '.jupytext-sync-ipynb//ipynb,scripts//py:percent,md'). ` +
                 "This input is passed to Jupytext's '--set-formats' argument. " +
                 "Syncing occurs on open/save/close based on your " +
                 "[Sync Settings](command:workbench.action.openSettings?%5B%22%40id%3AjupytextSync.syncDocuments%22%5D). " +
@@ -518,7 +519,7 @@ export async function openPairedNotebook(fileUri?: vscode.Uri) {
             // If ipynb is missing, add it automatically to the pairing formats.
             // We don't want the jupytext.defaultFormats to override the formats
             // in the script's metadata.
-            pairedFormats ? defaultNotebookDir + "//ipynb," + pairedFormats : undefined,
+            pairedFormats ? "ipynb," + pairedFormats : undefined,
             true,
         )
         pairedFormats = updatedFormats
