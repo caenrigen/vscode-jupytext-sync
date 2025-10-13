@@ -145,7 +145,7 @@ export async function resolveJupytext(pythonPath: string): Promise<MaybeJupytext
 }
 
 const injectTimestamp = (module: string, prefix: string = "") =>
-    "import sys,runpy,time; " +
+    "import sys; sys.path.remove(''); import runpy,time; " +
     "ow1=sys.stdout.write; " +
     `sys.stdout.write=lambda s,ow=ow1: ow(''.join(f'${prefix}{time.time():.6f} {l}' for l in s.splitlines(True))); ` +
     "ow2=sys.stderr.write; " +
@@ -197,7 +197,7 @@ export async function importJupytextFileExtensions(): Promise<string[] | undefin
         const extensions = await runCommand([
             jupytext.executable,
             "-c",
-            "import jupytext; import json; print(json.dumps(jupytext.formats.NOTEBOOK_EXTENSIONS))",
+            "import sys; sys.path.remove(''); import jupytext, json; print(json.dumps(jupytext.formats.NOTEBOOK_EXTENSIONS))",
         ])
         const extensionsArray = JSON.parse(extensions)
         getJConsole().appendLine(`Jupytext ${jupytext.jupytextVersion} supports: ${extensionsArray.join(", ")}`)
@@ -465,13 +465,13 @@ export async function readPairedFormats(filePath: string, logPrefix: string = ""
     let py = ""
     const vMin = "1.17.3"
     if (compareVersions(jupytext.jupytextVersion, vMin) < 0) {
-        py = `import jupytext; print(jupytext.read('${filePath}').metadata.get('jupytext', {}).get('formats', ''))`
+        py = `import sys; sys.path.remove(''); import jupytext; print(jupytext.read('${filePath}').metadata.get('jupytext', {}).get('formats', ''))`
     } else {
         // For Jupytext 1.17.3+, get_formats_from_notebook_path returns a dictionary.
         // E.g. [{'extension': '.ipynb'}, {'format_name': 'percent', 'extension': '.py'}].
         // This Python code joins the extension and format name into a string to keep
         // the same format as before.
-        py = `from jupytext.jupytext import get_formats_from_notebook_path;fmts = get_formats_from_notebook_path("${filePath}");fmts = [] if len(fmts) == 1 else fmts; print(",".join(f"{fmt.get('extension')[1:]}{':' + fmt.get('format_name', '') if fmt.get('format_name', None) else ''}" for fmt in fmts))`
+        py = `import sys; sys.path.remove(''); from jupytext.jupytext import get_formats_from_notebook_path;fmts = get_formats_from_notebook_path("${filePath}");fmts = [] if len(fmts) == 1 else fmts; print(",".join(f"{fmt.get('extension')[1:]}{':' + fmt.get('format_name', '') if fmt.get('format_name', None) else ''}" for fmt in fmts))`
     }
     try {
         // for options affecting jupytext based on config files

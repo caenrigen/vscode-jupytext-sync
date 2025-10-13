@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.2.2 2025-10-13
+
+- Sanitize Python imports: ignore modules in the current working directory.
+
 ## 1.2.1 2025-10-12
 
 - Drop the default suggested subdirectory for the notebook file (`ipynb` format).
