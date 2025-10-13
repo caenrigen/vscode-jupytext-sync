@@ -150,25 +150,33 @@ async function updateEventHandlers(context: vscode.ExtensionContext) {
 
     // Always refresh extra CLI args cache from config
     refreshCliArgsFromConfig()
-
-    let pythonPath = getPythonFromConfig()
     setJupytext(undefined) // reset runtime jupytext
 
     // TODO: add config to disable automatic python/Jupytext resolution on launch
+    
+    let pythonPath = getPythonFromConfig()
+    let findAutomatically = false
     if (pythonPath) {
         const jupytext = await resolveJupytext(pythonPath)
         if (jupytext.executable && jupytext.jupytextVersion) {
             setJupytext(jupytext as Jupytext, false)
         } else {
-            const msg = `Could not invoke Jupytext with the python executable '${pythonPath}'.`
+            const msg = `Could not invoke Jupytext with the python executable '${pythonPath}'. ` 
+            + 'You can attempt to find a suitable python executable by clicking "Find automatically" or '
+            + '"Open Settings" to specify the Python Executable manually.'
             console.warn(msg)
             getJConsole().appendLine(msg)
-            vscode.window.showWarningMessage(msg) // don't await
+            const selection = await vscode.window.showWarningMessage(msg, "Find automatically", "Open Settings")
+            if (selection === "Find automatically") {
+                findAutomatically = true
+            } else if (selection === "Open Settings") {
+                vscode.commands.executeCommand("workbench.action.openSettings", "jupytextSync.pythonExecutable")
+            }
         }
     }
 
     // First launch (or bad python/jupytext), try to set it automatically
-    if (!pythonPath) {
+    if (!pythonPath || findAutomatically) {
         const jupytext = await pickJupytext()
         if (jupytext) {
             setJupytext(jupytext, true)
@@ -185,7 +193,7 @@ async function updateEventHandlers(context: vscode.ExtensionContext) {
                 "create an issue on [GitHub](https://github.com/caenrigen/vscode-jupytext-sync/issues)."
             const selection = await vscode.window.showErrorMessage(messageSettings, "Open Settings", "Show Logs")
             if (selection === "Open Settings") {
-                // don't await
+                // no need to await
                 vscode.commands.executeCommand("workbench.action.openSettings", "jupytextSync.pythonExecutable")
             } else if (selection === "Show Logs") {
                 getJConsole().show()

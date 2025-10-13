@@ -95,7 +95,7 @@ export function setJupytext(jupytext: Jupytext | undefined, showMessage: boolean
     console.log(msg)
     getJConsole().appendLine(msg)
     msg +=
-        " This is configurable in the " +
+        " You can change it in the " +
         "[settings](command:workbench.action.openSettings?%5B%22%40id%3AjupytextSync.pythonExecutable%22%5D)."
     if (showMessage) {
         vscode.window.showInformationMessage(msg) // don't await
