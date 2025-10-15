@@ -26,7 +26,7 @@ export function getPythonFromConfig(): string | undefined {
             "${workspaceFolder}",
             vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? "",
         )
-        console.log("pythonExecutable", pythonExecutable)
+        console.debug("pythonExecutable", pythonExecutable)
     }
     return pythonExecutable
 }
@@ -38,14 +38,13 @@ export async function resolvePythonExecutable(command: string[]): Promise<string
     try {
         const output = await runCommand(cmdArgs)
         const msg = `Python '${command}' resolved to: ${output}`
-        console.debug(msg)
         if (output) {
             getJConsole().appendLine(msg)
             return output
         }
     } catch (ex) {
         const msg = `Failed to check python with '${cmdArgs}': ${ex}`
-        console.error(msg)
+        console.error(msg, ex)
     }
     return undefined
 }
@@ -130,7 +129,6 @@ async function getPythonEnvsViaMsPython() {
     const msgPrefix = "Skipping Python discovering via ms-python.python extension"
     if (!pythonExt) {
         const msg = `${msgPrefix}: not installed.`
-        console.log(msg)
         getJConsole().appendLine(msg)
         return undefined
     }
@@ -141,13 +139,12 @@ async function getPythonEnvsViaMsPython() {
         pythonApi = pythonExt.isActive ? pythonExt.exports : await pythonExt.activate()
     } catch (ex) {
         const msg = `${msgPrefix}, failed to activate: ${ex}`
-        console.error(msg)
+        console.error(msg, ex)
         getJConsole().appendLine(msg)
         return undefined
     }
 
     const envs = pythonApi.environments
-    console.log("envs", envs)
     return envs.known
 }
 
@@ -170,6 +167,6 @@ export async function getPythonPaths() {
         ...getSystemPythonPaths(),
         ...(pythonPath ? [pythonPath] : []),
     ])
-    console.log("pythonPaths", pythonPaths)
+    console.debug("pythonPaths", pythonPaths)
     return Array.from(pythonPaths)
 }

@@ -4,11 +4,12 @@ import {getJConsole, config, setConfig} from "./constants"
 import {
     getSupportedExtensions,
     handleDocument,
-    openPairedNotebook,
+    openPairedNotebookCommand,
     pair,
     refreshCliArgsFromConfig,
 } from "./jupytext"
 import {getPythonFromConfig} from "./python"
+import {PairedNotebookEditorProvider} from "./pairedNotebookEditor"
 
 // Store disposables for event handlers so we can manage them
 let disposables: vscode.Disposable[] = []
@@ -33,7 +34,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }),
     )
     context.subscriptions.push(vscode.commands.registerCommand("jupytextSync.pair", pair))
-    context.subscriptions.push(vscode.commands.registerCommand("jupytextSync.openPairedNotebook", openPairedNotebook))
+    context.subscriptions.push(vscode.commands.registerCommand("jupytextSync.openPairedNotebook", openPairedNotebookCommand))
     context.subscriptions.push(vscode.commands.registerCommand("jupytextSync.cell.changeToRaw", changeToRaw))
     context.subscriptions.push(vscode.commands.registerCommand("jupytextSync.cell.changeToCode", changeToCode))
     context.subscriptions.push(vscode.commands.registerCommand("jupytextSync.cell.toggleRaw", toggleRaw))
@@ -59,6 +60,9 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand("jupytextSync.locatePythonAndJupytext", locatePythonAndJupytext),
     )
+
+    // Register custom editor provider for paired notebooks
+    context.subscriptions.push(PairedNotebookEditorProvider.register(context))
 
     // Validate Python and Jupytext on extension activation so that we have an updated 
     // list of supported extensions

@@ -1,59 +1,8 @@
 import * as vscode from "vscode"
-import {config, defaultNotebookDir} from "./constants"
+import {config, defaultNotebookDir, EXTENSIONS} from "./constants"
 import {getPythonPaths, runCommand, resolvePythonExecutable} from "./python"
 import {getJConsole} from "./constants"
 import * as path from "path"
-
-export const EXTENSIONS = [
-    ".ipynb",
-    ".md",
-    ".markdown",
-    ".Rmd",
-    ".py",
-    ".coco",
-    ".R",
-    ".r",
-    ".jl",
-    ".cpp",
-    ".ss",
-    ".clj",
-    ".scm",
-    ".sh",
-    ".ps1",
-    ".q",
-    ".m",
-    ".wolfram",
-    ".pro",
-    ".js",
-    ".ts",
-    ".scala",
-    ".rs",
-    ".robot",
-    ".resource",
-    ".cs",
-    ".fsx",
-    ".fs",
-    ".sos",
-    ".java",
-    ".groovy",
-    ".sage",
-    ".ml",
-    ".hs",
-    ".tcl",
-    ".mac",
-    ".gp",
-    ".do",
-    ".sas",
-    ".xsh",
-    ".lgt",
-    ".logtalk",
-    ".lua",
-    ".go",
-    ".qmd",
-    ".myst",
-    ".mystnb",
-    ".mnb",
-]
 
 export type MaybeJupytext = {
     python: string
@@ -89,7 +38,7 @@ export function getJupytext(): Jupytext | undefined {
 export async function setJupytext(jupytext: Jupytext | undefined, showMessage: boolean = false): Promise<void> {
     jupytextInfo = jupytext
     if (!jupytext) {
-        console.log("Jupytext cleared")
+        getJConsole().appendLine("Jupytext cleared")
         resetSupportedExtensions()
         return
     }
@@ -104,7 +53,6 @@ export async function setJupytext(jupytext: Jupytext | undefined, showMessage: b
     if (jupytext.executable !== jupytext.python) {
         msg += ` (${jupytext.python}).`
     }
-    console.log(msg)
     getJConsole().appendLine(msg)
     msg +=
     " You can change it in the " +
@@ -119,7 +67,6 @@ export async function setJupytext(jupytext: Jupytext | undefined, showMessage: b
             `Upgrade to Jupytext ${vMin}+ for best experience. ` +
             "Older versions are not well supported, " +
             "please do not report issues if you are using an outdated Jupytext version."
-        console.log(msgVersion)
         getJConsole().appendLine(msgVersion)
         vscode.window.showWarningMessage(msgVersion) // don't await
     }
@@ -132,7 +79,6 @@ export async function getAvailableVersions(): Promise<Jupytext[]> {
     for (const {python, executable, jupytextVersion} of versions) {
         msg += `Option: ${python} (${executable}) jupytext=${jupytextVersion}\n`
     }
-    console.log(msg)
     getJConsole().appendLine(msg)
     return versions.filter((v) => v.executable && v.jupytextVersion) as Jupytext[]
 }
@@ -143,7 +89,8 @@ async function runJupytextVersion(pythonPath: string) {
         return version ?? undefined
     } catch (ex) {
         const msg = `Failed to run Jupytext version with ${pythonPath}: ${ex}`
-        console.debug(msg, ex)
+        console.error(msg, ex)
+        getJConsole().appendLine(msg)
         return undefined
     }
 }
@@ -176,7 +123,7 @@ export async function runJupytext(
             throw new Error("Jupytext not found")
         }
         const cmdLog = ["jupytext", ...cmdArgs].join(" ")
-        getJConsole().appendLine(`Executing (abbreviated): ${cmdLog}`)
+        getJConsole().appendLine(`${logPrefix}Executing (abbreviated): ${cmdLog}`)
         // pass the cwd so that jupytext can pick up config files
         const cwd = path.dirname(cmdArgs[cmdArgs.length - 1])
         // const cmdBase = [jupytext.executable, "-m", "jupytext"]
@@ -186,7 +133,6 @@ export async function runJupytext(
         return output
     } catch (ex) {
         const msg = `Failed to run Jupytext: ${ex}`
-        console.error(msg, ex)
         getJConsole().appendLine(msg)
         if (showError) {
             const selection = await vscode.window.showErrorMessage(
@@ -243,11 +189,9 @@ export function refreshCliArgsFromConfig(): void {
             "] sync: [" +
             cachedSyncCliArgs.join(" ") +
             "]"
-        console.debug(msg)
         getJConsole().appendLine(msg)
     } catch (ex) {
         const msg = `Failed to load extra CLI args from config: ${ex}`
-        console.error(msg)
         getJConsole().appendLine(msg)
         cachedSetFormatsCliArgs = []
         cachedSyncCliArgs = []
@@ -272,28 +216,24 @@ function getSyncArgs(): string[] {
 const syncQueues = new Map<string, Promise<string | undefined>>()
 
 export async function runJupytextSync(
-    fileName: string,
+    uri: vscode.Uri,
     showError: boolean = true,
     logPrefix: string = "",
 ): Promise<string | undefined> {
-    const normalizedPath = path.resolve(fileName)
-
+    const normalizedPath = path.resolve(uri.fsPath)
     // Create a new operation that will be added to the queue
     const jupyterSyncFunc = async (): Promise<string | undefined> => {
-        const msg = `${logPrefix}Running jupytext sync for ${fileName}`
-        console.log(msg)
+        const msg = `${logPrefix}Running jupytext sync for ${normalizedPath}`
         getJConsole().appendLine(msg)
         try {
-            const result = await runJupytext([...getSyncArgs(), fileName], showError, logPrefix)
-            const msg = `${logPrefix}Completed jupytext sync for ${fileName}`
-            console.log(msg)
+            const result = await runJupytext([...getSyncArgs(), normalizedPath], showError, logPrefix)
+            const msg = `${logPrefix}Completed jupytext sync for ${normalizedPath}`
             getJConsole().appendLine(msg)
             return result
-        } catch (error) {
-            const msg = `${logPrefix}Failed jupytext sync for ${fileName}: ${error}`
-            console.error(msg)
+        } catch (ex) {
+            const msg = `${logPrefix}Failed jupytext sync for ${normalizedPath}: ${ex}`
             getJConsole().appendLine(msg)
-            throw error
+            throw ex
         }
     }
 
@@ -315,12 +255,12 @@ export async function runJupytextSync(
     return newQueue
 }
 
-export async function runJupytextSetFormats(fileName: string, formats: string) {
-    return await runJupytext([...getSetFormatsArgs(formats), fileName])
+export async function runJupytextSetFormats(uri: vscode.Uri, formats: string[]) {
+    return await runJupytext([...getSetFormatsArgs(formats.join(",")), uri.fsPath])
 }
 
-export function isSupportedFile(fileName: string): boolean {
-    const ext = path.extname(fileName)
+export function isSupportedFile(uri: vscode.Uri): boolean {
+    const ext = path.extname(uri.fsPath)
     return supportedExtensions.includes(ext)
 }
 
@@ -332,18 +272,15 @@ export async function handleDocument(document: vscode.TextDocument | vscode.Note
     const jupytext = getJupytext()
     if (!jupytext) {
         const msg = `${logPrefix}Jupytext not set`
-        console.error(msg)
         getJConsole().appendLine(msg)
         return
     }
-    if (isSupportedFile(document.uri.fsPath) && document.uri.scheme === "file") {
-        const msg = `${logPrefix}${document.uri.fsPath}`
-        console.log(msg)
+    if (isSupportedFile(document.uri) && document.uri.scheme === "file") {
+        const msg = `${logPrefix}${document.uri}`
         getJConsole().appendLine(msg)
         const vMin = "1.17.3"
         if (compareVersions(jupytext.jupytextVersion, vMin) < 0) {
             const msg = `${logPrefix}Jupytext ${jupytext.jupytextVersion} < ${vMin} workaround: check paired formats...`
-            console.log(msg)
             getJConsole().appendLine(msg)
             // This fixes a bug when default formats are set inside a config file e.g.
             // pyproject.toml:
@@ -354,22 +291,21 @@ export async function handleDocument(document: vscode.TextDocument | vscode.Note
             // and `jupytext` uses them right away even thought we never paired the file.
             // In such cases, when saving any file matching supported file extensions,
             // some files will be paired unintentionally.
-            const pairedFormats = await readPairedFormats(document.uri.fsPath, logPrefix)
+            const pairedFormats = await readPairedFormats(document.uri, logPrefix)
             if (!pairedFormats) {
-                const msg = `${logPrefix}No paired formats in '${document.uri.fsPath}', skipping sync`
-                console.log(msg)
+                const msg = `${logPrefix}No paired formats in '${document.uri}', skipping sync`
                 getJConsole().appendLine(msg)
                 return
             }
         }
-        return await runJupytextSync(document.uri.fsPath, true, logPrefix)
+        return await runJupytextSync(document.uri, true, logPrefix)
     }
 }
 
-async function getFilePath(fileUri?: vscode.Uri) {
+async function getFileUri(fileUri?: vscode.Uri) {
     // Case 1: Command was called from context menu on a file
     if (fileUri && fileUri instanceof vscode.Uri) {
-        return fileUri.fsPath
+        return fileUri
     }
     // Case 2: Command was called from notebook editor
     else if (vscode.window.activeNotebookEditor) {
@@ -380,11 +316,11 @@ async function getFilePath(fileUri?: vscode.Uri) {
             return undefined
         }
 
-        return activeNotebookEditor.notebook.uri.fsPath
+        return activeNotebookEditor.notebook.uri
     }
     // Case 3: Command was called from text editor
     else if (vscode.window.activeTextEditor) {
-        return vscode.window.activeTextEditor.document.uri.fsPath
+        return vscode.window.activeTextEditor.document.uri
     }
     // No file context available
     else {
@@ -393,41 +329,46 @@ async function getFilePath(fileUri?: vscode.Uri) {
     }
 }
 
-function getSuggestedFormats(filePath: string) {
-    let ext = path.extname(filePath)
+function getSuggestedFormats(uri: vscode.Uri) : string[] {
+    let ext = path.extname(uri.fsPath)
     const defaultFormats = getDefaultFormats()
-    let suggestFormats = defaultFormats[ext] || "default"
+    let suggestFormatsStr = defaultFormats[ext] || "default"
     ext = ext.slice(1)
-    if (suggestFormats === "default") {
+    if (suggestFormatsStr === "default") {
         const notebookFormat = defaultNotebookDir ? `${defaultNotebookDir}//ipynb` : "ipynb"
         let fallback = `${notebookFormat},${ext}:percent`
         if (ext === "ipynb") {
             fallback = `${notebookFormat},py:percent`
         }
-        suggestFormats = defaultFormats["default"] || fallback
+        suggestFormatsStr = defaultFormats["default"] || fallback
     }
     if (ext !== "ipynb") {
-        suggestFormats = suggestFormats.replace("${ext}", ext)
+        suggestFormatsStr = suggestFormatsStr.replace("${ext}", ext)
     }
-    return suggestFormats
+    return suggestFormatsStr ? suggestFormatsStr.split(",") : []
 }
 
 export async function setFormats(
     fileUri?: vscode.Uri,
     askFormats: boolean | undefined = undefined,
-    formats: string | undefined = undefined,
-    requireNotebookFormat: boolean = false,
-) {
-    const filePath = await getFilePath(fileUri)
-    if (!filePath) {
+    formats: string[] | undefined = undefined,
+    requireIpynbFormat: boolean = false,
+): Promise<[vscode.Uri | undefined, string[] | undefined]> {
+    const uri = await getFileUri(fileUri)
+    if (!uri) {
         return [undefined, undefined]
     }
 
     // Read formats from the file if available, otherwise use the suggested formats
-    formats = formats || (await readPairedFormats(filePath)) || getSuggestedFormats(filePath)
+    if (formats === undefined) {
+        formats = await readPairedFormats(uri)
+    }
+    if (formats === undefined || formats.length <= 1) {
+        formats = getSuggestedFormats(uri)
+    }
     if (askFormats) {
-        const fType = filePath.endsWith(".ipynb") ? "notebook" : "document"
-        formats = await vscode.window.showInputBox({
+        const fType = uri.fsPath.endsWith(".ipynb") ? "notebook" : "document"
+        const formatsStr = await vscode.window.showInputBox({
             title: "Configure Jupytext Pairing Formats",
             prompt:
                 `Define formats to pair with this ${fType}. Jupytext uses this to sync paired files. ` +
@@ -439,26 +380,27 @@ export async function setFormats(
                 "For common formats and more details, " +
                 "refer to the [Default Formats](command:workbench.action.openSettings?%5B%22%40id%3AjupytextSync.defaultFormats%22%5D) " +
                 "settings and the [Jupytext docs](https://jupytext.readthedocs.io).",
-            value: formats,
+            value: formats.join(","),
         })
         // User cancelled the input box
-        if (!formats) {
-            return [filePath, undefined]
+        if (!formatsStr) {
+            return [uri, undefined]
         }
-        if (requireNotebookFormat) {
-            if (!formats.includes("ipynb")) {
+        if (requireIpynbFormat) {
+            if (!formatsStr.includes("ipynb")) {
                 const opt = {modal: true}
                 vscode.window.showErrorMessage("Notebook 'ipynb' format required.", opt)
-                return [filePath, undefined]
+                return [uri, undefined]
             }
         }
+        formats = formatsStr.split(",")
     }
 
-    if (!formats) {
-        return [filePath, undefined]
+    if (formats === undefined || formats.length <= 1) {
+        return [uri, undefined]
     }
-    await runJupytextSetFormats(filePath, formats)
-    return [filePath, formats]
+    await runJupytextSetFormats(uri, formats)
+    return [uri, formats]
 }
 
 // Use this in package.json to pair documents, otherwise VSCode injects more arguments
@@ -467,119 +409,141 @@ export async function pair(fileUri?: vscode.Uri) {
     return await setFormats(fileUri, config().get<boolean>("askFormats.onPairDocuments", true), undefined)
 }
 
-export async function readPairedFormats(filePath: string, logPrefix: string = "") {
+export async function readPairedFormats(fileUri: vscode.Uri, logPrefix: string = "") : Promise<string[] | undefined> {
     const jupytext = getJupytext()
     if (!jupytext) {
-        const msg = `${logPrefix}Jupytext not set, cannot get paired formats for '${filePath}'`
-        console.error(msg)
+        const msg = `${logPrefix}Jupytext not set, cannot get paired formats for '${fileUri}'`
         getJConsole().appendLine(msg)
         return undefined
     }
     let py = ""
     const vMin = "1.17.3"
     if (compareVersions(jupytext.jupytextVersion, vMin) < 0) {
-        py = `import sys; sys.path.remove(''); import jupytext; print(jupytext.read('${filePath}').metadata.get('jupytext', {}).get('formats', ''))`
+        py = `import sys; sys.path.remove(''); import jupytext; print(jupytext.read('${fileUri.fsPath}').metadata.get('jupytext', {}).get('formats', ''))`
     } else {
         // For Jupytext 1.17.3+, get_formats_from_notebook_path returns a dictionary.
         // E.g. [{'extension': '.ipynb'}, {'format_name': 'percent', 'extension': '.py'}].
         // This Python code joins the extension and format name into a string to keep
         // the same format as before.
-        py = `import sys; sys.path.remove(''); from jupytext.jupytext import get_formats_from_notebook_path;fmts = get_formats_from_notebook_path("${filePath}");fmts = [] if len(fmts) == 1 else fmts; print(",".join(f"{fmt.get('extension')[1:]}{':' + fmt.get('format_name', '') if fmt.get('format_name', None) else ''}" for fmt in fmts))`
+        py = `import sys; sys.path.remove(''); from jupytext.jupytext import get_formats_from_notebook_path;fmts = get_formats_from_notebook_path("${fileUri.fsPath}");fmts = [] if len(fmts) == 1 else fmts; print(",".join(f"{fmt.get('extension')[1:]}{':' + fmt.get('format_name', '') if fmt.get('format_name', None) else ''}" for fmt in fmts))`
     }
     try {
         // for options affecting jupytext based on config files
-        const cwd = path.dirname(filePath)
-        const formats = await runCommand([jupytext.executable, "-c", py], cwd)
-        let msg = `${logPrefix}Read paired formats for '${filePath}': '${formats}'`
-        console.info(msg)
+        const cwd = path.dirname(fileUri.fsPath)
+        // Will be empty string if file has no paired formats
+        const formatsStr = await runCommand([jupytext.executable, "-c", py], cwd)
+        let msg = `${logPrefix}Read paired formats for '${fileUri}': '${formatsStr}'`
         getJConsole().appendLine(msg)
-        return formats // Will be empty string if file has no paired formats
+        return formatsStr ? formatsStr.split(",") : []
     } catch (ex) {
-        const msg = `${logPrefix}Failed to get paired formats for '${filePath}': ${ex}`
-        console.error(msg)
+        const msg = `${logPrefix}Failed to get paired formats for '${fileUri}': ${ex}`
         getJConsole().appendLine(msg)
         return undefined
     }
 }
 
-export async function openPairedNotebook(fileUri?: vscode.Uri) {
-    let filePath = await getFilePath(fileUri)
-    let msg = `Opening as paired notebook '${filePath}'`
-    console.info(msg)
-    getJConsole().appendLine(msg)
-    if (!filePath) {
-        msg = `Failed to open as paired notebook '${filePath}'`
-        console.error(msg)
-        getJConsole().appendLine(msg)
-        return [undefined, undefined]
-    }
-    let pairedFormats = await readPairedFormats(filePath)
-    if (pairedFormats === undefined) {
-        msg = `Failed to get paired formats for '${filePath}'. Aborting.`
-        console.error(msg)
-        getJConsole().appendLine(msg)
-        vscode.window.showErrorMessage(msg)
-        return [filePath, undefined]
-    }
-
-    if (pairedFormats === "" || !pairedFormats.split(",").some((f) => f.endsWith("ipynb"))) {
-        msg = `Not paired with a .ipynb notebook: '${filePath}', pairing`
-        console.info(msg)
-        getJConsole().appendLine(msg)
-        let [_, updatedFormats] = await setFormats(
-            fileUri,
-            config().get<boolean>("askFormats.onOpenPairedNotebook", false),
-            // If ipynb is missing, add it automatically to the pairing formats.
-            // We don't want the jupytext.defaultFormats to override the formats
-            // in the script's metadata.
-            pairedFormats ? "ipynb," + pairedFormats : undefined,
-            true,
-        )
-        pairedFormats = updatedFormats
-        if (!pairedFormats) {
-            msg = `Aborted or failed to pair '${filePath}'`
-            console.warn(msg)
-            getJConsole().appendLine(msg)
-            return [filePath, undefined]
-        }
-        msg = `Paired: '${filePath}' with '${pairedFormats}' formats`
-        console.info(msg)
-        getJConsole().appendLine(msg)
-    } else {
-        // Sync before opening the notebook, just in case
-        await runJupytextSync(filePath)
-    }
-    // Extract the subdir from the paired formats and open the ipynb file as a notebook
-    const formats = pairedFormats.split(",")
+export function getNotebookPathFromFormats(fileUri: vscode.Uri, formats: string[]): vscode.Uri {
     for (const format of formats) {
         if (format.endsWith("ipynb")) {
             let subdir = ""
             if (format.includes("//")) {
                 subdir = format.split("//")[0]
             }
-            const {dir, name} = path.parse(filePath)
-            let subdirPath = dir
-            if (!subdir) {
-                console.warn("Unexpected format: " + format)
-            } else {
-                subdirPath = path.join(dir, subdir)
-            }
+            const {dir, name} = path.parse(fileUri.fsPath)
+            const subdirPath = subdir ? path.join(dir, subdir) : dir
             const notebookPath = path.join(subdirPath, name + ".ipynb")
-            const uri = vscode.Uri.file(notebookPath)
-
-            // This did not seem to work
-            // await vscode.workspace.openNotebookDocument(uri)
-
-            await vscode.commands.executeCommand("vscode.openWith", uri, "jupyter-notebook")
-            return [filePath, pairedFormats]
+            return vscode.Uri.file(notebookPath)
         }
     }
-    // Should not happen
-    msg = `No ipynb format found in paired formats: '${pairedFormats}'`
-    console.warn(msg)
+    throw new Error(`No ipynb format found in paired formats: '${formats.join(",")}'`)
+}
+
+async function insertIpynbFormat(fileUri: vscode.Uri, formats: string[]) {
+    let msg = `Not paired with a .ipynb notebook: '${fileUri}', pairing`
     getJConsole().appendLine(msg)
-    vscode.window.showErrorMessage(msg)
-    return [filePath, pairedFormats]
+    const [_, updatedFormats] = await setFormats(
+        fileUri,
+        config().get<boolean>("askFormats.onOpenPairedNotebook", false),
+        // If ipynb is missing, add it automatically to the pairing formats.
+        // We don't want the jupytext.defaultFormats to override the formats
+        // in the script's metadata.
+        formats ? ["ipynb", ...formats] : undefined,
+        true,
+    )
+    if (updatedFormats === undefined || updatedFormats.length <= 1) {
+        msg = `Aborted or failed to pair '${fileUri}'`
+        getJConsole().appendLine(msg)
+        return undefined
+    }
+    msg = `Paired: '${fileUri}' with '${updatedFormats.join(",")}' formats`
+    getJConsole().appendLine(msg)
+    return updatedFormats
+}
+
+// Wrapper to deal with the potential arguments that VS Code might be injecting.
+export async function openPairedNotebookCommand(fileUri?: vscode.Uri) {
+    return await openPairedNotebookProgress(fileUri)
+}
+
+export async function openPairedNotebookProgress(fileUri?: vscode.Uri, formats: string[] | undefined = undefined) {
+    const syncNotification = vscode.window.withProgress(
+        {
+            location: vscode.ProgressLocation.Notification,
+            title: "Jupytext: ",
+            cancellable: false,
+        },
+        async (progress) => await openPairedNotebook(fileUri, formats, progress)
+    )
+    await syncNotification
+}
+
+export async function openPairedNotebook(fileUri?: vscode.Uri, formats: string[] | undefined = undefined, progress: vscode.Progress<{message: string, increment?: number}> | undefined = undefined) {
+    let msg = `Opening as paired notebook '${fileUri}'`
+    let uri = await getFileUri(fileUri)
+    getJConsole().appendLine(msg)
+    if (!uri) {
+        msg = `Failed to open as paired notebook '${uri}'`
+        getJConsole().appendLine(msg)
+        vscode.window.showErrorMessage(msg)
+        return
+    }
+
+    if (formats === undefined) {
+        progress?.report({message: "Reading formats"})
+        formats = await readPairedFormats(uri)
+        if (formats === undefined) {
+            msg = `Failed to get paired formats for '${uri}'. Aborting.`
+            getJConsole().appendLine(msg)
+            vscode.window.showErrorMessage(msg)
+            return
+        }
+    }
+
+    if (formats.length <= 1 || !formats.some((f) => f.endsWith("ipynb"))) {
+        progress?.report({message: "Inserting ipynb format"})
+        formats = await insertIpynbFormat(uri, formats)
+        if (formats === undefined) {
+            return // Failed to pair or cancelled by the user
+        }
+    } else {
+        // Sync before opening the notebook, just in case
+        progress?.report({message: "Syncing"})
+        await runJupytextSync(uri)
+    }
+    // Extract the subdir from the paired formats and open the ipynb file as a notebook
+    try {
+        progress?.report({message: "Opening notebook"})
+        const notebookUri = getNotebookPathFromFormats(uri, formats)
+        // This did not seem to work
+        // await vscode.workspace.openNotebookDocument(notebookUri)
+        await vscode.commands.executeCommand("vscode.openWith", notebookUri, "jupyter-notebook")
+        return
+    } catch (error) {
+        msg = `${error}`
+        getJConsole().appendLine(msg)
+        vscode.window.showErrorMessage(msg)
+        return
+    }
 }
 
 function compareVersions(a: string, b: string) {
@@ -636,7 +600,6 @@ export function sortVersions(versions: Jupytext[]) {
 
 export async function pickJupytext(): Promise<Jupytext | undefined> {
     const msg = "Attempting to pick a python executable and Jupytext automatically"
-    console.log(msg)
     getJConsole().appendLine(msg)
     const sorted = sortVersions(await getAvailableVersions())
     return sorted[sorted.length - 1] ?? undefined
