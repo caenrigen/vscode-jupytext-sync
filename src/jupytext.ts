@@ -3,6 +3,7 @@ import {config, defaultNotebookDir, EXTENSIONS} from "./constants"
 import {getPythonPaths, runCommand, resolvePythonExecutable} from "./python"
 import {getJConsole} from "./constants"
 import * as path from "path"
+import * as fs from "fs"
 
 export type MaybeJupytext = {
     python: string
@@ -18,6 +19,48 @@ export type Jupytext = {
 
 let jupytextInfo: Jupytext | undefined = undefined
 let supportedExtensions: string[] = EXTENSIONS
+let extensionContext: vscode.ExtensionContext | undefined = undefined
+
+const AUTO_CREATED_NOTEBOOKS_KEY = "jupytextSync.autoCreatedNotebooks"
+
+export function setExtensionContext(context: vscode.ExtensionContext): void {
+    extensionContext = context
+}
+
+export function markNotebookAsAutoCreated(notebookUri: vscode.Uri): void {
+    if (!extensionContext) {
+        getJConsole().appendLine("Warning: Extension context not set, cannot track auto-created notebook")
+        return
+    }
+    const autoCreated = extensionContext.workspaceState.get<string[]>(AUTO_CREATED_NOTEBOOKS_KEY, [])
+    const notebookPath = notebookUri.fsPath
+    if (!autoCreated.includes(notebookPath)) {
+        autoCreated.push(notebookPath)
+        extensionContext.workspaceState.update(AUTO_CREATED_NOTEBOOKS_KEY, autoCreated)
+        getJConsole().appendLine(`Marked notebook as auto-created: ${notebookPath}`)
+    }
+}
+
+export function isNotebookAutoCreated(notebookUri: vscode.Uri): boolean {
+    if (!extensionContext) {
+        return false
+    }
+    const autoCreated = extensionContext.workspaceState.get<string[]>(AUTO_CREATED_NOTEBOOKS_KEY, [])
+    return autoCreated.includes(notebookUri.fsPath)
+}
+
+export function unmarkNotebookAsAutoCreated(notebookUri: vscode.Uri): void {
+    if (!extensionContext) {
+        return
+    }
+    const autoCreated = extensionContext.workspaceState.get<string[]>(AUTO_CREATED_NOTEBOOKS_KEY, [])
+    const notebookPath = notebookUri.fsPath
+    const filtered = autoCreated.filter(path => path !== notebookPath)
+    if (filtered.length < autoCreated.length) {
+        extensionContext.workspaceState.update(AUTO_CREATED_NOTEBOOKS_KEY, filtered)
+        getJConsole().appendLine(`Unmarked notebook as auto-created: ${notebookPath}`)
+    }
+}
 
 export function getSupportedExtensions(): string[] {
     return supportedExtensions
@@ -442,7 +485,7 @@ export async function readPairedFormats(fileUri: vscode.Uri, logPrefix: string =
     }
 }
 
-export function getNotebookPathFromFormats(fileUri: vscode.Uri, formats: string[]): vscode.Uri {
+export function getNotebookUriFromFormats(fileUri: vscode.Uri, formats: string[]): vscode.Uri {
     for (const format of formats) {
         if (format.endsWith("ipynb")) {
             let subdir = ""
@@ -519,6 +562,10 @@ export async function openPairedNotebook(fileUri?: vscode.Uri, formats: string[]
         }
     }
 
+    // Determine the notebook path and check if it exists before syncing
+    const notebookUri = getNotebookUriFromFormats(uri, formats)
+    const notebookExistedBefore = fs.existsSync(notebookUri.fsPath)
+    
     if (formats.length <= 1 || !formats.some((f) => f.endsWith("ipynb"))) {
         progress?.report({message: "Inserting ipynb format"})
         formats = await insertIpynbFormat(uri, formats)
@@ -530,10 +577,15 @@ export async function openPairedNotebook(fileUri?: vscode.Uri, formats: string[]
         progress?.report({message: "Syncing"})
         await runJupytextSync(uri)
     }
+    
+    // If the notebook was created by the sync operation, mark it as auto-created
+    if (!notebookExistedBefore && fs.existsSync(notebookUri.fsPath)) {
+        markNotebookAsAutoCreated(notebookUri)
+    }
+    
     // Extract the subdir from the paired formats and open the ipynb file as a notebook
     try {
         progress?.report({message: "Opening notebook"})
-        const notebookUri = getNotebookPathFromFormats(uri, formats)
         // This did not seem to work
         // await vscode.workspace.openNotebookDocument(notebookUri)
         await vscode.commands.executeCommand("vscode.openWith", notebookUri, "jupyter-notebook")
