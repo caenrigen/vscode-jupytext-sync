@@ -80,6 +80,19 @@
           "markdownDescription": "Automatically open the paired `.ipynb` notebook when opening a text file (e.g., `.py`, `.md`) that is paired with a notebook via Jupytext.\n\nWhen enabled, opening a paired text file will:\n1. Check if the file has a paired `.ipynb` format.\n2. Sync the files.\n3. Open the `.ipynb` file in the Notebook Editor instead.\n\nThis provides a seamless notebook-first editing experience for paired files. You can bypass this behavior using the **'Open With...'** context menu to open the file as a regular text file.\n\nThis only affects files that `jupytext` reports as paired. Unpaired files will open normally in the text editor.\n\nConsider using the [`workbench.editorAssociations`](command:workbench.action.openSettings?%5B%22%40id%3Aworkbench.editorAssociations%22%5D) setting to prevent UI artifacts when you disable this feature, or to override the editor association per file extension.\n\nFor a smoother UI experience, consider disabling [`workbench.editor.enablePreview`](command:workbench.action.openSettings?%5B%22%40id%3Aworkbench.editor.enablePreview%22%5D) setting.",
           "order": 1
         },
+        "jupytextSync.deleteOnNotebookClose": {
+          "type": "string",
+          "default": "ask",
+          "enum": ["never", "ask", "yes", "if auto created"],
+          "enumDescriptions": [
+            "Never delete the notebook file when closing",
+            "Always ask for confirmation before deleting",
+            "Always delete if the notebook has paired formats",
+            "Only delete if the notebook was auto-created by this extension via 'Open as paired Notebook' or by opening a paired text file with the custom editor"
+          ],
+          "markdownDescription": "Control whether to delete the `.ipynb` notebook file when closing a paired notebook editor.\n\nDeleted files are moved to the system trash/recycle bin and can be recovered.\n\nThis feature is designed for workflows where the `.ipynb` file is generated from source text files (e.g., `.py`, `.md`) and the text file is the primary source of truth.",
+          "order": 2
+        },
         "jupytextSync.syncDocuments": {
           "type": "object",
           "default": {
@@ -118,7 +131,7 @@
           },
           "additionalProperties": false,
           "markdownDescription": "Controls on which events to attempt to `jupytext --sync` previously paired documents (in the text/notebook editor).\n\nNote that this will apply even if the pairing has been performed externally, e.g., manually running `jupytext --set-formats ...` in the terminal, and the pairing metadata has been saved in the text document (or you have a `jupytext.toml`/ `pyproject.toml` file with default formats).\n\n**NB** the `on*Open`/`on*Close` events might be flaky, e.g., triggering multiple times.",
-          "order": 2
+          "order": 3
         },
         "jupytextSync.askFormats": {
           "type": "object",
@@ -138,7 +151,7 @@
             }
           },
           "markdownDescription": "Controls whether to ask for the pairing file formats before executing commands that may require pairing files. If `false`, the default pairing file formats specified in the [Default Formats](command:workbench.action.openSettings?%5B%22%40id%3AjupytextSync.defaultFormats%22%5D) configuration will be used.",
-          "order": 3
+          "order": 4
         },
         "jupytextSync.defaultFormats": {
           "type": "object",
@@ -202,11 +215,11 @@
           },
           "markdownDescription": "Define default Jupytext pairing formats (e.g., `ipynb,py:percent`) to control how Jupytext Sync pairs and syncs files. Formats can be overridden per file when pairing or opening as notebook, see [Ask Formats](command:workbench.action.openSettings?%5B%22%40id%3AjupytextSync.askFormats%22%5D).\n\n**Syntax:** Uses Jupytext's `--set-formats` string. `${ext}` is the file extension (w/out `.`).\n\n**`default` Key:** An extension set to `default` inherits this key's format string.\n\n**Subdirectories:** Prefix with `dir_name//` (e.g., `notebooks//ipynb,scripts//py:percent,md`). Paths are relative to the source file's parent dir. \n\n**Docs:** For all Jupytext formats and detailed syntax, see the [Jupytext documentation](https://jupytext.readthedocs.io/en/latest/formats.html).\n\n**Activation:** Enabled for file extensions recognized by your installed `jupytext` package. Unsupported entries will be ignored.",
           "title": "Default pairing file formats",
-          "order": 5
+          "order": 6
         },
         "jupytextSync.enabledMenus": {
           "type": "object",
-          "order": 4,
+          "order": 5,
           "additionalProperties": false,
           "default": {
             "explorerContext": true,
@@ -251,7 +264,7 @@
         },
         "jupytextSync.setFormatsArgs": {
           "type": "array",
-          "order": 6,
+          "order": 7,
           "items": {
             "type": "string",
             "description": "Argument key/flag to pass"
@@ -263,7 +276,7 @@
         },
         "jupytextSync.syncArgs": {
           "type": "array",
-          "order": 7,
+          "order": 8,
           "items": {
             "type": "string",
             "description": "Argument key/flag to pass"
