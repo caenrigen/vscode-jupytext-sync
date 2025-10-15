@@ -1,10 +1,8 @@
 import * as vscode from "vscode"
-import {getJupytext, pickJupytext, resolveJupytext, setJupytext, Jupytext} from "./jupytext"
+import {pickJupytext, resolveJupytext, setJupytext, Jupytext} from "./jupytext"
 import {getJConsole, config, setConfig} from "./constants"
 import {
-    importJupytextFileExtensions,
     getSupportedExtensions,
-    setSupportedExtensions,
     handleDocument,
     openPairedNotebook,
     pair,
@@ -24,11 +22,13 @@ export async function activate(context: vscode.ExtensionContext) {
             console.debug("onDidChangeConfiguration")
             if (
                 e.affectsConfiguration("jupytextSync.syncDocuments") ||
-                e.affectsConfiguration("jupytextSync.pythonExecutable") ||
                 e.affectsConfiguration("jupytextSync.setFormatsArgs") ||
                 e.affectsConfiguration("jupytextSync.syncArgs")
             ) {
                 await updateEventHandlers(context)
+            }
+            if (e.affectsConfiguration("jupytextSync.pythonExecutable")) {
+                await validatePythonAndJupytext()
             }
         }),
     )
@@ -56,6 +56,13 @@ export async function activate(context: vscode.ExtensionContext) {
         ),
     )
     context.subscriptions.push(vscode.commands.registerCommand("jupytextSync.showLogs", () => getJConsole().show()))
+    context.subscriptions.push(
+        vscode.commands.registerCommand("jupytextSync.locatePythonAndJupytext", locatePythonAndJupytext),
+    )
+
+    // Validate Python and Jupytext on extension activation so that we have an updated 
+    // list of supported extensions
+    await validatePythonAndJupytext()
 
     // Initial setup of handlers based on current configuration
     await updateEventHandlers(context)
@@ -145,15 +152,33 @@ async function toggleRaw() {
     return await changeToCode()
 }
 
-async function updateEventHandlers(context: vscode.ExtensionContext) {
-    console.debug("updateEventHandlers")
+async function locatePythonAndJupytext() {
+    getJConsole().appendLine("Starting Python and Jupytext discovery...")
+    const jupytext = await pickJupytext()
+    if (jupytext) {
+        setJupytext(jupytext, true)
+        // Set it globally to avoid the need to select the interpreter again.
+        // Advanced users can always configure the Workspace overrides.
+        await setConfig("jupytextSync.pythonExecutable", jupytext.executable, vscode.ConfigurationTarget.Global)
+    } else {
+        const messageSettings =
+            "Failed to automatically locate a python executable that can invoke Jupytext. " +
+            "Click 'Open Settings' and specify the Python Executable. " +
+            "There you will find more detailed instructions and tips. " +
+            "If you still have issues, click 'Show Logs' for more information or " +
+            "create an issue on [GitHub](https://github.com/caenrigen/vscode-jupytext-sync/issues)."
+        const selection = await vscode.window.showErrorMessage(messageSettings, "Open Settings", "Show Logs")
+        if (selection === "Open Settings") {
+            // no need to await
+            vscode.commands.executeCommand("workbench.action.openSettings", "jupytextSync.pythonExecutable")
+        } else if (selection === "Show Logs") {
+            getJConsole().show()
+        }
+    }
+}
 
-    // Always refresh extra CLI args cache from config
-    refreshCliArgsFromConfig()
-    setJupytext(undefined) // reset runtime jupytext
-
-    // TODO: add config to disable automatic python/Jupytext resolution on launch
-    
+async function validatePythonAndJupytext() {
+    setJupytext(undefined, false) // reset runtime jupytext
     let pythonPath = getPythonFromConfig()
     let findAutomatically = false
     if (pythonPath) {
@@ -174,41 +199,17 @@ async function updateEventHandlers(context: vscode.ExtensionContext) {
             }
         }
     }
-
     // First launch (or bad python/jupytext), try to set it automatically
     if (!pythonPath || findAutomatically) {
-        const jupytext = await pickJupytext()
-        if (jupytext) {
-            setJupytext(jupytext, true)
-            // Set it globally to avoid the need to select the interpreter again.
-            // It is less intuitive for less experienced users. Advanced users can
-            // always configure the Workspace overrides.
-            await setConfig("jupytextSync.pythonExecutable", jupytext.executable, vscode.ConfigurationTarget.Global)
-        } else {
-            const messageSettings =
-                "Failed to automatically locate a python executable that can invoke Jupytext. " +
-                "Click 'Open Settings' and specify the Python Executable. " +
-                "There you will find more detailed instructions and tips. " +
-                "If you still have issues, click 'Show Logs' for more information or " +
-                "create an issue on [GitHub](https://github.com/caenrigen/vscode-jupytext-sync/issues)."
-            const selection = await vscode.window.showErrorMessage(messageSettings, "Open Settings", "Show Logs")
-            if (selection === "Open Settings") {
-                // no need to await
-                vscode.commands.executeCommand("workbench.action.openSettings", "jupytextSync.pythonExecutable")
-            } else if (selection === "Show Logs") {
-                getJConsole().show()
-            }
-        }
-    }
-
-    // update supported extensions importing them from the jupytext python module
-    if (getJupytext()) {
-        const extensions = await importJupytextFileExtensions()
-        if (extensions) {
-            setSupportedExtensions(extensions)
-        }
+        await locatePythonAndJupytext()
     }
     await vscode.commands.executeCommand("setContext", "jupytextSync.supportedExtensions", getSupportedExtensions())
+}
+
+async function updateEventHandlers(context: vscode.ExtensionContext) {
+    console.debug("updateEventHandlers")
+
+    refreshCliArgsFromConfig()
 
     const syncDocuments = config().get<{
         onTextDocumentOpen: boolean

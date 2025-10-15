@@ -78,16 +78,28 @@ export function setSupportedExtensions(extensions: string[]): void {
     supportedExtensions = extensions ?? []
 }
 
+export function resetSupportedExtensions(): void {
+    supportedExtensions = EXTENSIONS
+}
+
 export function getJupytext(): Jupytext | undefined {
     return jupytextInfo
 }
 
-export function setJupytext(jupytext: Jupytext | undefined, showMessage: boolean = false): void {
+export async function setJupytext(jupytext: Jupytext | undefined, showMessage: boolean = false): Promise<void> {
     jupytextInfo = jupytext
     if (!jupytext) {
         console.log("Jupytext cleared")
+        resetSupportedExtensions()
         return
     }
+
+    // Import supported extensions from Jupytext
+    const extensions = await importJupytextFileExtensions()
+    if (extensions) {
+        setSupportedExtensions(extensions)
+    }
+
     let msg = `Using Jupytext ${jupytext.jupytextVersion} via '${jupytext.executable}' `
     if (jupytext.executable !== jupytext.python) {
         msg += ` (${jupytext.python}).`
@@ -95,20 +107,21 @@ export function setJupytext(jupytext: Jupytext | undefined, showMessage: boolean
     console.log(msg)
     getJConsole().appendLine(msg)
     msg +=
-        " You can change it in the " +
-        "[settings](command:workbench.action.openSettings?%5B%22%40id%3AjupytextSync.pythonExecutable%22%5D)."
+    " You can change it in the " +
+    "[settings](command:workbench.action.openSettings?%5B%22%40id%3AjupytextSync.pythonExecutable%22%5D)."
     if (showMessage) {
         vscode.window.showInformationMessage(msg) // don't await
     }
     const vMin = "1.17.3"
     if (compareVersions(jupytext.jupytextVersion, vMin) < 0) {
-        const msg =
+        const msgVersion =
             `Jupytext version ${jupytext.jupytextVersion} < ${vMin}. ` +
             `Upgrade to Jupytext ${vMin}+ for best experience. ` +
             "Older versions are not well supported, " +
             "please do not report issues if you are using an outdated Jupytext version."
-        console.log(msg)
-        getJConsole().appendLine(msg)
+        console.log(msgVersion)
+        getJConsole().appendLine(msgVersion)
+        vscode.window.showWarningMessage(msgVersion) // don't await
     }
 }
 

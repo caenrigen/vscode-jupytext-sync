@@ -264,6 +264,11 @@
         "category": "Jupytext"
       },
       {
+        "command": "jupytextSync.locatePythonAndJupytext",
+        "title": "Locate Python and Jupytext",
+        "category": "Jupytext"
+      },
+      {
         "command": "jupytextSync.pair",
         "title": "Pair via Jupytext",
         "shortTitle": "Pair",
