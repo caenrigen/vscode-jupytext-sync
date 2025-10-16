@@ -1,5 +1,5 @@
 import * as vscode from "vscode"
-import {pickJupytext, resolveJupytext, setJupytext, Jupytext} from "./jupytext"
+import {pickJupytext, resolveJupytext, setJupytext, Jupytext, getFileUri} from "./jupytext"
 import {getJConsole, config, setConfig} from "./constants"
 import {
   getSupportedExtensions,
@@ -222,11 +222,11 @@ async function validatePythonAndJupytext() {
   await vscode.commands.executeCommand("setContext", "jupytextSync.supportedExtensions", getSupportedExtensions())
 }
 
-async function handleNotebookCloseInternal(notebookUri: vscode.Uri, deleteOnClose: string, logPrefix: string) {
-  const autoCreated = isNotebookAutoCreated(notebookUri)
-  getJConsole().appendLine(`${logPrefix}Notebook ${notebookUri} auto-created: ${autoCreated}`)
+async function handleNotebookCloseInternal(uri: vscode.Uri, deleteOnClose: string, logPrefix: string) {
+  const autoCreated = isNotebookAutoCreated(uri)
+  getJConsole().appendLine(`${logPrefix}Notebook ${uri} closed, auto-created: ${autoCreated}`)
   // always unmark
-  unmarkNotebookAsAutoCreated(notebookUri, logPrefix)
+  unmarkNotebookAsAutoCreated(uri, logPrefix)
 
   let shouldDelete = false
   let needsConfirmation = false
@@ -235,12 +235,12 @@ async function handleNotebookCloseInternal(notebookUri: vscode.Uri, deleteOnClos
       shouldDelete = autoCreated
     } else if (deleteOnClose === "yes") {
       // Use internal version to avoid nested queuing
-      const formats = await readPairedFormatsInternal(notebookUri, logPrefix)
+      const formats = await readPairedFormatsInternal(uri, logPrefix)
       const hasPairedFormats = formats !== undefined && formats.length > 1
       shouldDelete = hasPairedFormats
     } else if (deleteOnClose === "ask") {
       // Use internal version to avoid nested queuing
-      const formats = await readPairedFormatsInternal(notebookUri, logPrefix)
+      const formats = await readPairedFormatsInternal(uri, logPrefix)
       const hasPairedFormats = formats !== undefined && formats.length > 1
       if (hasPairedFormats || autoCreated) {
         needsConfirmation = true
@@ -254,18 +254,18 @@ async function handleNotebookCloseInternal(notebookUri: vscode.Uri, deleteOnClos
 
     if (needsConfirmation) {
       const result = await vscode.window.showWarningMessage(
-        `Delete paired notebook ${notebookUri}?`,
+        `Delete paired notebook ${uri}?`,
         {modal: true},
         "Delete", // The first is the default action for pressing enter, at least on macOS
         "Open Settings",
         "Keep", // The last is the default for pressing space bar, at least on macOS
       )
       if (result === "Keep") {
-        getJConsole().appendLine(`${logPrefix}User chose to keep notebook: ${notebookUri}`)
+        getJConsole().appendLine(`${logPrefix}User chose to keep notebook: ${uri}`)
         return
       }
       if (result === "Open Settings") {
-        getJConsole().appendLine(`${logPrefix}User chose to open settings: ${notebookUri}`)
+        getJConsole().appendLine(`${logPrefix}User chose to open settings: ${uri}`)
         vscode.commands.executeCommand("workbench.action.openSettings", "jupytextSync.deleteOnNotebookClose")
         return
       }
@@ -274,8 +274,8 @@ async function handleNotebookCloseInternal(notebookUri: vscode.Uri, deleteOnClos
 
     // Delete the file by moving it to trash
     try {
-      await vscode.workspace.fs.delete(notebookUri, {useTrash: true})
-      let msg = `Notebook moved to trash: ${notebookUri}.`
+      await vscode.workspace.fs.delete(uri, {useTrash: true})
+      let msg = `Notebook moved to trash: ${uri}.`
       getJConsole().appendLine(`${logPrefix}${msg}`)
       if (!needsConfirmation) {
         msg +=
@@ -285,12 +285,12 @@ async function handleNotebookCloseInternal(notebookUri: vscode.Uri, deleteOnClos
       }
       return
     } catch (ex) {
-      const msg = `Failed to delete notebook ${notebookUri}: ${ex}`
+      const msg = `Failed to delete notebook ${uri}: ${ex}`
       getJConsole().appendLine(`${logPrefix}${msg}`)
       vscode.window.showErrorMessage(msg)
     }
   } catch (ex) {
-    const msg = `${logPrefix}Error in handleNotebookClose for ${notebookUri.fsPath}: ${ex}`
+    const msg = `${logPrefix}Error in handleNotebookClose for ${uri.fsPath}: ${ex}`
     getJConsole().appendLine(msg)
     console.error(msg, ex)
   }
@@ -298,23 +298,27 @@ async function handleNotebookCloseInternal(notebookUri: vscode.Uri, deleteOnClos
 
 async function handleNotebookClose(document: vscode.NotebookDocument) {
   const logPrefix = makeLogPrefix("onDidCloseNotebookDocument")
-  getJConsole().appendLine(`${logPrefix}Notebook closed: ${document.uri}`)
+  const uri = document.uri
+  getJConsole().appendLine(`${logPrefix}Notebook closed: ${uri}`)
   const deleteOnClose = config().get<string>("deleteOnNotebookClose", "if auto created")
   if (deleteOnClose === "never") {
-    getJConsole().appendLine(`${logPrefix}Notebook ${document.uri} deleteOnNotebookClose is 'never', skipping`)
+    getJConsole().appendLine(`${logPrefix}Notebook ${uri} deleteOnNotebookClose is 'never', skipping`)
     return // should not happen
   }
 
-  const notebookUri = document.uri
-  if (!notebookUri.fsPath.endsWith(".ipynb")) {
-    getJConsole().appendLine(`${logPrefix}Notebook ${notebookUri} is not a .ipynb file, skipping`)
+  if (!uri.fsPath.endsWith(".ipynb")) {
+    getJConsole().appendLine(`${logPrefix}Document ${uri} is not a .ipynb file, skipping`)
     return // should not happen
+  }
+
+  if (!(await getFileUri(uri))) {
+    return // untitled notebook
   }
 
   // Queue this entire operation to avoid race conditions with sync/setFormats operations
   return queueOperation(
-    notebookUri,
-    async () => handleNotebookCloseInternal(notebookUri, deleteOnClose, logPrefix),
+    uri,
+    async () => handleNotebookCloseInternal(uri, deleteOnClose, logPrefix),
     "deleteOnClose",
     logPrefix,
   )

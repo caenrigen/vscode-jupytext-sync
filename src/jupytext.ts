@@ -41,6 +41,10 @@ export function markNotebookAsAutoCreated(notebookUri: vscode.Uri, logPrefix: st
   }
 }
 
+export function isUntitled(uri: vscode.Uri): boolean {
+  return uri.scheme === "untitled"
+}
+
 export function isNotebookAutoCreated(notebookUri: vscode.Uri): boolean {
   if (!extensionContext) {
     return false
@@ -406,31 +410,31 @@ export async function handleDocument(document: vscode.TextDocument | vscode.Note
   }
 }
 
-async function getFileUri(fileUri?: vscode.Uri) {
+export async function getFileUri(fileUri?: vscode.Uri) {
+  let uri: vscode.Uri | undefined
   // Case 1: Command was called from context menu on a file
   if (fileUri && fileUri instanceof vscode.Uri) {
-    return fileUri
+    uri = fileUri
   }
   // Case 2: Command was called from notebook editor
   else if (vscode.window.activeNotebookEditor) {
-    const activeNotebookEditor = vscode.window.activeNotebookEditor
-
-    if (activeNotebookEditor.notebook.isUntitled) {
-      vscode.window.showInformationMessage("Please save the notebook before pairing.")
-      return undefined
-    }
-
-    return activeNotebookEditor.notebook.uri
+    uri = vscode.window.activeNotebookEditor.notebook.uri
   }
   // Case 3: Command was called from text editor
   else if (vscode.window.activeTextEditor) {
-    return vscode.window.activeTextEditor.document.uri
+    uri = vscode.window.activeTextEditor.document.uri
   }
   // No file context available
   else {
-    vscode.window.showInformationMessage("Please open a file or notebook to pair.")
+    vscode.window.showErrorMessage("No file context available, cannot get file URI")
+    uri = undefined
+  }
+  if (!uri) return undefined
+  if (isUntitled(uri)) {
+    getJConsole().appendLine(`Invalid URI: ${uri}`)
     return undefined
   }
+  return uri
 }
 
 function getSuggestedFormats(uri: vscode.Uri): string[] {
