@@ -16,7 +16,7 @@ This VSCode extension integrates [`jupytext`](https://jupytext.readthedocs.io/en
 
 ## Installation
 
-You can install this extension by searching for "Jupytext Sync" in the Extensions Marketplace within your VSCode-like IDE.
+You can install this extension by searching for "jupytext-sync" in the Extensions Marketplace within your VSCode-like IDE.
 
 The extension is available on both [Microsoft VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=caenrigen.jupytext-sync) and on the [Open VSX Registry](https://open-vsx.org/extension/caenrigen/jupytext-sync) in case you are using an alternative VSCode-based IDE like [VSCodium](https://vscodium.com).
 
