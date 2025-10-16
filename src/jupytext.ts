@@ -261,14 +261,15 @@ const operationQueues = new Map<string, Promise<any>>()
 
 /**
  * Generate a consistent key for a group of paired files.
- * All paired files share the same base directory and name (ignoring subdirs in format specs).
+ * All paired files share the same base name, ignoring directory and
+ * subdirs in format specs. This might be over-constraining, but there are no good
+ * alternatives without complex logic.
  */
 function getPairingGroupKey(fileUri: vscode.Uri): string {
-    const parsed = path.parse(fileUri.fsPath)
-    // Use directory + base filename (without extension) as the group key
+    // Use base filename (without extension) as the group key
     // This ensures all paired files (script.py, script.ipynb, script.md) share the same key
-    const groupKey = path.join(parsed.dir, parsed.name)
-    return path.resolve(groupKey) // Normalize the path
+    const fsPath = fileUri.fsPath
+    return path.basename(fsPath, path.extname(fsPath))
 }
 
 /**
@@ -276,7 +277,8 @@ function getPairingGroupKey(fileUri: vscode.Uri): string {
  * All operations on the same paired file group will be serialized.
  *
  * @param uri - The URI of any file in the paired group
- * @param operation - The operation to execute (should use internal functions, not queued ones)
+ * @param operation - The operation to execute. Must use internal functions,
+ * not queued ones, to avoid nested queuing deadlocks.
  * @param operationName - Name of the operation for logging
  * @param logPrefix - Optional prefix for log messages
  */
