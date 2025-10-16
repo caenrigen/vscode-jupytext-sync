@@ -2,7 +2,7 @@
   "name": "jupytext-sync",
   "displayName": "Jupytext Sync",
   "description": "Pair and Auto Sync Jupyter Notebooks via Jupytext",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "engines": {
     "vscode": "^1.72.0"
   },
@@ -83,7 +83,12 @@
         "jupytextSync.deleteOnNotebookClose": {
           "type": "string",
           "default": "ask",
-          "enum": ["never", "ask", "yes", "if auto created"],
+          "enum": [
+            "never",
+            "ask",
+            "yes",
+            "if auto created"
+          ],
           "enumDescriptions": [
             "Never delete the notebook file when closing",
             "Always ask for confirmation before deleting",
