@@ -2,9 +2,7 @@
 
 [![Screenshot](https://raw.githubusercontent.com/caenrigen/vscode-jupytext-sync/main/assets/screenshot.jpg)](https://raw.githubusercontent.com/caenrigen/vscode-jupytext-sync/main/assets/screenshot.jpg)
 
-This VSCode extension is a wrapper around the Jupytext Python command-line interface, designed to bring a smoother Jupyter Notebook experience to VSCode, especially for users familiar with JupyterLab or the classic Jupyter Notebook interface. It aims to address common pain points and streamline the workflow when working with Jupytext-paired notebooks in VSCode-based IDEs.
-
-The core motivation behind this extension is to bridge the gap between VSCode's powerful editing features and Jupytext's ability to keep notebooks in version-control-friendly text formats. While VSCode offers a notebook interface, it doesn't natively integrate with Jupytext's pairing and synchronization features. This extension provides that missing functionality, along with a few more convenience tools.
+This VSCode extension integrates [`jupytext`](https://jupytext.readthedocs.io/en/latest/)'s pairing and synchronization features, enabling automatic syncing between notebooks and their version-control-friendly text formats (`.py`, `.md`, etc.).
 
 ## Demos
 
@@ -18,9 +16,9 @@ The core motivation behind this extension is to bridge the gap between VSCode's 
 
 ## Installation
 
-You can install this extensions by searching for "Jupytext Sync" in the Extensions Marketplace within the IDE.
+You can install this extension by searching for "Jupytext Sync" in the Extensions Marketplace within your VSCode-like IDE.
 
-The extention is available on both [Microsoft VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=caenrigen.jupytext-sync) and on the [Open VSX Registry](https://open-vsx.org/extension/caenrigen/jupytext-sync) in case you are using an alternative VSCode-based IDE like [VSCodium](https://vscodium.com).
+The extension is available on both [Microsoft VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=caenrigen.jupytext-sync) and on the [Open VSX Registry](https://open-vsx.org/extension/caenrigen/jupytext-sync) in case you are using an alternative VSCode-based IDE like [VSCodium](https://vscodium.com).
 
 Alternatively, you can install it directly by downloading the `.vsix` file from the release page on the GitHub and drag-and-drop it in your VSCode-based IDE. This has the downside that you will not be notified about available updates.
 
@@ -39,6 +37,9 @@ This extension solves several common annoyances and provides handy features for 
 - **Automatic Synchronization**:
   - Automatically syncs paired files (`.ipynb` and text-based formats like `.py`, `.md`) when you open, save, or close them. This ensures that your notebook and its text representation are always in sync.
   - Configuration options allow you to customize which events trigger a sync (on open, on save, on close for both text documents and notebook documents). See the `jupytextSync.syncDocuments` setting for details.
+- **Seamless Notebook-First Workflow**:
+  - **Auto-open notebooks**: When you open a paired text file (e.g., `.py`, `.md`), the extension automatically opens the paired `.ipynb` notebook instead, providing a seamless editing experience. This behavior can be customized via the `jupytextSync.autoOpenNotebook` setting.
+  - **Auto-cleanup**: Optionally delete the `.ipynb` file when closing the notebook editor, keeping your workspace clean when the text file is your primary source of truth. Deleted files are moved to trash and can be recovered. See the `jupytextSync.deleteOnNotebookClose` setting for details.
 - **Open Text Files as Notebooks**:
   - Open Jupytext-compatible text files (e.g., `.py`, `.md` with Jupytext metadata) as notebooks using the "**Open as paired Notebook via Jupytext**" command. A notebook file will be created and all your edits in it will be synced to the text file(s).
 - **Persistent Cell Outputs**: All files are saved to disk, meaning cell outputs are not lost when reopening a notebook, providing a more consistent experience.
@@ -55,20 +56,22 @@ This extension solves several common annoyances and provides handy features for 
 - **Python Interpreter Flexibility**:
   - Attempts are made to automatically discover Python executables that are able to invoke Jupytext. If the Microsoft Python extension is installed ([open in VSCode](vscode:extension/ms-python.python) / [open on marketplace](https://marketplace.visualstudio.com/items?itemName=ms-python.python)), its selected interpreter and other discovered environments (e.g., `venv`, `conda`) are considered.
   - Allows you to configure a custom Python executable path for `jupytext` if needed (via the `jupytextSync.pythonExecutable` setting).
-  - You can check the extension logs ("**Jupytext: Show Jupytext Sync Logs**" command) to see which Python environment is being used.
+  - You can use the "**Jupytext: Locate Python and Jupytext**" command or check the extension logs ("**Jupytext: Show Jupytext Sync Logs**" command) to see which Python environment is being used.
 
 ## Recommended Workflow
 
 1.  **Pair your Notebook**:
     - Open an `.ipynb` file or a text file (e.g., `myscript.py`, `mymarkdown.md`) that you want to use as a notebook.
-    - Use the "**Pair via Jupytext**" command (accessible from the Command Palette, context menus, or toolbars).
+    - Use the "**Pair via Jupytext**" command (accessible from the Command Palette, context menus, or toolbar icons).
     - You'll be prompted to choose the Jupytext formats (e.g., `ipynb,py:percent`) unless disabled via `jupytextSync.askFormats.onPairDocuments`. The default suggestion is configurable per file extension using `jupytextSync.defaultFormats`.
-2.  **Work in the Notebook or Text File**:
-    - Primarily work within the `.ipynb` notebook interface in VSCode. The extension will automatically keep the paired text file in sync upon saving (or other configured events).
-    - Alternatively, open your Jupytext-compatible text file using the "**Open as paired Notebook via Jupytext**" command and work directly in the notebook interface.
+2.  **Work in the Notebook**:
+    - With `jupytextSync.autoOpenNotebook` enabled (default), simply open your paired text file (e.g., `.py`, `.md`), and the extension will automatically open the `.ipynb` notebook for you.
+    - The extension will automatically keep the paired files in sync upon saving (or other configured events via `jupytextSync.syncDocuments`).
+    - When you close the notebook, you can optionally have the `.ipynb` file automatically deleted (configurable via `jupytextSync.deleteOnNotebookClose`), keeping your workspace clean while preserving your text file as the source of truth.
 3.  **Version Control**:
     - Commit the text-based file (e.g., `.py`, `.md`) to your Git repository. This file is human-readable and diff-friendly.
     - Optionally, you can also commit the `.ipynb` file if you prefer to version control the outputs too.
+    - If using auto-delete on close, consider adding `*.ipynb` to your `.gitignore` to avoid tracking generated notebook files.
 4.  **Pre-commit Hook (Recommended)**: To ensure your paired files are always synchronized before committing, it's highly recommended to use the `jupytext` pre-commit hook. This prevents accidental commits of unsynced files.
 
     Refer to the [Jupytext documentation on pre-commit hooks](https://jupytext.readthedocs.io/en/latest/using-pre-commit.html) for detailed configuration.
@@ -85,8 +88,30 @@ You can configure the extension's behavior via VSCode settings (search for `jupy
   - **Details**: Jupytext Sync requires a Python executable with the `jupytext` package installed.
     - _Automatic discovery_: If not specified, the extension attempts to find a suitable Python executable. If the Microsoft Python extension is installed, its selected interpreter and other known environments are checked. Otherwise, it looks for `python` and `python3` in your system PATH. The one providing the highest `jupytext` version is preferred.
     - _Manual override_: Specify an absolute path or a command (e.g., `python3`). If using a command, ensure your VS Code instance inherits the correct PATH (launching from an activated terminal might be necessary for virtual environments).
-  - **Tip**: Use the "**Jupytext: Show Jupytext Sync Logs**" command to verify which Python executable is being used.
+  - **Tip**: Use the "**Jupytext: Show Jupytext Sync Logs**" or "**Jupytext: Locate Python and Jupytext**" commands to verify which Python executable is being used.
   - **Default**: `""` (empty string, for automatic discovery)
+
+- **`jupytextSync.autoOpenNotebook`**:
+
+  - **Description**: Automatically open the paired `.ipynb` notebook when opening a text file (e.g., `.py`, `.md`) that is paired with a notebook via Jupytext.
+  - **Details**: When enabled, opening a paired text file will:
+    1. Check if the file has a paired `.ipynb` format.
+    2. Sync the files.
+    3. Open the `.ipynb` file in the Notebook Editor instead.
+  - **Tip**: This provides a seamless notebook-first editing experience for paired files. You can bypass this behavior using the "Open With..." context menu to open the file as a regular text file.
+  - **Note**: This only affects files that `jupytext` reports as paired. Unpaired files will open normally in the text editor.
+  - **Default**: `true`
+
+- **`jupytextSync.deleteOnNotebookClose`**:
+
+  - **Description**: Control whether to delete the `.ipynb` notebook file when closing a paired notebook editor.
+  - **Options**:
+    - `"never"`: Never delete the notebook file when closing.
+    - `"ask"`: Always ask for confirmation before deleting.
+    - `"yes"`: Always delete if the notebook has paired formats.
+    - `"if auto created"`: Only delete if the notebook was auto-created by this extension via "Open as paired Notebook" or by opening a paired text file with the custom editor.
+  - **Details**: Deleted files are moved to the system trash/recycle bin and can be recovered. This feature is designed for workflows where the `.ipynb` file is generated from source text files (e.g., `.py`, `.md`) and the text file is the primary source of truth.
+  - **Default**: `"ask"`
 
 - **`jupytextSync.syncDocuments`**:
 
@@ -157,6 +182,7 @@ cell_metadata_filter = "-all"
 This extension provides the following commands, accessible via the Command Palette (Ctrl+Shift+P or Cmd+Shift+P) under the "Jupytext" category:
 
 - **`Jupytext: Show Jupytext Sync Logs`**: Opens the output channel for Jupytext Sync, showing logs which can be helpful for troubleshooting, especially for Python executable discovery.
+- **`Jupytext: Locate Python and Jupytext`**: Manually triggers Python and Jupytext discovery, showing detailed information about which Python executable and Jupytext version is being used. Useful for troubleshooting environment issues.
 - **`Jupytext: Pair via Jupytext`**: Initiates the pairing process for the active file or a file selected from the Explorer. Prompts for Jupytext formats based on `jupytextSync.askFormats.onPairDocuments` and `jupytextSync.defaultFormats`.
 - **`Jupytext: Open as paired Notebook via Jupytext`**: Opens a Jupytext-compatible text file (e.g., `.py`, `.md`) as a VS Code notebook. This is a key feature for working with text-based versions of notebooks.
 - **`Jupytext: Insert Raw Code Cell Below and Focus Container`**: Inserts a new raw cell below the active cell in a notebook.
