@@ -256,50 +256,117 @@ function getSyncArgs(): string[] {
     return cachedSyncCliArgs
 }
 
-const syncQueues = new Map<string, Promise<string | undefined>>()
+// Queue for operations on paired file groups
+const operationQueues = new Map<string, Promise<any>>()
 
-export async function runJupytextSync(
+/**
+ * Generate a consistent key for a group of paired files.
+ * All paired files share the same base directory and name (ignoring subdirs in format specs).
+ */
+function getPairingGroupKey(fileUri: vscode.Uri): string {
+    const parsed = path.parse(fileUri.fsPath)
+    // Use directory + base filename (without extension) as the group key
+    // This ensures all paired files (script.py, script.ipynb, script.md) share the same key
+    const groupKey = path.join(parsed.dir, parsed.name)
+    return path.resolve(groupKey) // Normalize the path
+}
+
+/**
+ * Queue an operation for a group of paired files to ensure sequential execution.
+ * All operations on the same paired file group will be serialized.
+ * 
+ * @param uri - The URI of any file in the paired group
+ * @param operation - The operation to execute (should use internal functions, not queued ones)
+ * @param operationName - Name of the operation for logging
+ * @param logPrefix - Optional prefix for log messages
+ */
+export async function queueOperation<T>(
     uri: vscode.Uri,
-    showError: boolean = true,
+    operation: () => Promise<T>,
+    operationName: string,
     logPrefix: string = "",
-): Promise<string | undefined> {
-    const normalizedPath = path.resolve(uri.fsPath)
-    // Create a new operation that will be added to the queue
-    const jupyterSyncFunc = async (): Promise<string | undefined> => {
-        const msg = `${logPrefix}Running jupytext sync for ${normalizedPath}`
+): Promise<T> {
+    const groupKey = getPairingGroupKey(uri)
+    
+    const wrappedOperation = async (): Promise<T> => {
+        const msg = `${logPrefix}Starting ${operationName} for group ${groupKey}`
         getJConsole().appendLine(msg)
         try {
-            const result = await runJupytext([...getSyncArgs(), normalizedPath], showError, logPrefix)
-            const msg = `${logPrefix}Completed jupytext sync for ${normalizedPath}`
+            const result = await operation()
+            const msg = `${logPrefix}Completed ${operationName} for group ${groupKey}`
             getJConsole().appendLine(msg)
             return result
         } catch (ex) {
-            const msg = `${logPrefix}Failed jupytext sync for ${normalizedPath}: ${ex}`
+            const msg = `${logPrefix}Failed ${operationName} for group ${groupKey}: ${ex}`
             getJConsole().appendLine(msg)
             throw ex
         }
     }
 
-    // Get the current queue for this file (or create empty promise if none exists)
-    const currentQueue = syncQueues.get(normalizedPath) || Promise.resolve()
+    // Get the current queue for this group (or create empty promise if none exists)
+    const currentQueue = operationQueues.get(groupKey) || Promise.resolve()
 
     // Chain the new operation to run after the current queue
     // Even if previous operation failed, continue with this one
-    const newQueue = currentQueue.then(() => jupyterSyncFunc()).catch(() => jupyterSyncFunc())
+    const newQueue = currentQueue
+        .then(() => wrappedOperation())
+        .catch(() => wrappedOperation())
 
-    // Update the queue
-    syncQueues.set(
-        normalizedPath,
-        // Don't let failed operations break the queue
-        newQueue.catch(() => undefined),
-    )
+    // Update the queue (don't let failed operations break the queue)
+    operationQueues.set(groupKey, newQueue.catch(() => undefined))
 
     // Return the result of this specific operation
     return newQueue
 }
 
-export async function runJupytextSetFormats(uri: vscode.Uri, formats: string[]) {
+// Internal implementation - does the actual sync without queuing
+async function runJupytextSyncInternal(
+    uri: vscode.Uri,
+    showError: boolean = true,
+    logPrefix: string = "",
+): Promise<string | undefined> {
+    const normalizedPath = path.resolve(uri.fsPath)
+    const msg = `${logPrefix}Running jupytext sync for ${normalizedPath}`
+    getJConsole().appendLine(msg)
+    try {
+        const result = await runJupytext([...getSyncArgs(), normalizedPath], showError, logPrefix)
+        const msg = `${logPrefix}Completed jupytext sync for ${normalizedPath}`
+        getJConsole().appendLine(msg)
+        return result
+    } catch (ex) {
+        const msg = `${logPrefix}Failed jupytext sync for ${normalizedPath}: ${ex}`
+        getJConsole().appendLine(msg)
+        throw ex
+    }
+}
+
+// External API - queued version
+export async function runJupytextSync(
+    uri: vscode.Uri,
+    showError: boolean = true,
+    logPrefix: string = "",
+): Promise<string | undefined> {
+    return queueOperation(
+        uri,
+        () => runJupytextSyncInternal(uri, showError, logPrefix),
+        "sync",
+        logPrefix,
+    )
+}
+
+// Internal implementation - does the actual setFormats without queuing
+async function runJupytextSetFormatsInternal(uri: vscode.Uri, formats: string[]) {
     return await runJupytext([...getSetFormatsArgs(formats.join(",")), uri.fsPath])
+}
+
+// External API - queued version
+export async function runJupytextSetFormats(uri: vscode.Uri, formats: string[]) {
+    return queueOperation(
+        uri,
+        () => runJupytextSetFormatsInternal(uri, formats),
+        "setFormats",
+        "",
+    )
 }
 
 export function isSupportedFile(uri: vscode.Uri): boolean {
@@ -452,7 +519,9 @@ export async function pair(fileUri?: vscode.Uri) {
     return await setFormats(fileUri, config().get<boolean>("askFormats.onPairDocuments", true), undefined)
 }
 
-export async function readPairedFormats(fileUri: vscode.Uri, logPrefix: string = "") : Promise<string[] | undefined> {
+// Internal implementation - reads paired formats without queuing
+// Export for use within other queued operations to avoid nested queuing
+export async function readPairedFormatsInternal(fileUri: vscode.Uri, logPrefix: string = ""): Promise<string[] | undefined> {
     const jupytext = getJupytext()
     if (!jupytext) {
         const msg = `${logPrefix}Jupytext not set, cannot get paired formats for '${fileUri}'`
@@ -483,6 +552,16 @@ export async function readPairedFormats(fileUri: vscode.Uri, logPrefix: string =
         getJConsole().appendLine(msg)
         return undefined
     }
+}
+
+// External API - queued version
+export async function readPairedFormats(fileUri: vscode.Uri, logPrefix: string = ""): Promise<string[] | undefined> {
+    return queueOperation(
+        fileUri,
+        () => readPairedFormatsInternal(fileUri, logPrefix),
+        "readPairedFormats",
+        logPrefix,
+    )
 }
 
 export function getNotebookUriFromFormats(fileUri: vscode.Uri, formats: string[]): vscode.Uri {

@@ -10,7 +10,8 @@ import {
     setExtensionContext,
     isNotebookAutoCreated,
     unmarkNotebookAsAutoCreated,
-    readPairedFormats,
+    queueOperation,
+    readPairedFormatsInternal,
 } from "./jupytext"
 import {getPythonFromConfig} from "./python"
 import {PairedNotebookEditorProvider} from "./pairedNotebookEditor"
@@ -232,71 +233,81 @@ async function handleNotebookClose(document: vscode.NotebookDocument) {
         return  // should not happen
     }
     
-    const autoCreated = isNotebookAutoCreated(notebookUri)
-    getJConsole().appendLine(`Notebook ${notebookUri} auto-created: ${autoCreated}`)
-    // always unmark
-    unmarkNotebookAsAutoCreated(notebookUri)
+    // Queue this entire operation to avoid race conditions with sync/setFormats operations
+    return queueOperation(
+        notebookUri,
+        async () => {
+            const autoCreated = isNotebookAutoCreated(notebookUri)
+            getJConsole().appendLine(`Notebook ${notebookUri} auto-created: ${autoCreated}`)
+            // always unmark
+            unmarkNotebookAsAutoCreated(notebookUri)
 
-    let shouldDelete = false
-    let needsConfirmation = false
-    try {
-        if (deleteOnClose === "if auto created") {
-            shouldDelete = autoCreated
-        } else if (deleteOnClose === "yes") {
-            const formats = await readPairedFormats(notebookUri)
-            const hasPairedFormats = formats !== undefined && formats.length > 1
-            shouldDelete = hasPairedFormats
-        } else if (deleteOnClose === "ask") {
-            const formats = await readPairedFormats(notebookUri)
-            const hasPairedFormats = formats !== undefined && formats.length > 1
-            if (hasPairedFormats || autoCreated) {
-                needsConfirmation = true
-                shouldDelete = true // Will be confirmed below
-            }
-        }
+            let shouldDelete = false
+            let needsConfirmation = false
+            try {
+                if (deleteOnClose === "if auto created") {
+                    shouldDelete = autoCreated
+                } else if (deleteOnClose === "yes") {
+                    // Use internal version to avoid nested queuing
+                    const formats = await readPairedFormatsInternal(notebookUri)
+                    const hasPairedFormats = formats !== undefined && formats.length > 1
+                    shouldDelete = hasPairedFormats
+                } else if (deleteOnClose === "ask") {
+                    // Use internal version to avoid nested queuing
+                    const formats = await readPairedFormatsInternal(notebookUri)
+                    const hasPairedFormats = formats !== undefined && formats.length > 1
+                    if (hasPairedFormats || autoCreated) {
+                        needsConfirmation = true
+                        shouldDelete = true // Will be confirmed below
+                    }
+                }
 
-        if (!shouldDelete) {
-            return
-        }
-        
-        if (needsConfirmation) {
-            const result = await vscode.window.showWarningMessage(
-                `Delete paired notebook ${document.uri}?`,
-                {modal: true},
-                "Delete", // The first is the default action for pressing enter, at least on macOS
-                "Open Settings",
-                "Keep", // The last is the default for pressing space bar, at least on macOS
-            )
-            if (result === "Keep") {
-                getJConsole().appendLine(`User chose to keep notebook: ${notebookUri}`)
-                return
+                if (!shouldDelete) {
+                    return
+                }
+                
+                if (needsConfirmation) {
+                    const result = await vscode.window.showWarningMessage(
+                        `Delete paired notebook ${document.uri}?`,
+                        {modal: true},
+                        "Delete", // The first is the default action for pressing enter, at least on macOS
+                        "Open Settings",
+                        "Keep", // The last is the default for pressing space bar, at least on macOS
+                    )
+                    if (result === "Keep") {
+                        getJConsole().appendLine(`User chose to keep notebook: ${notebookUri}`)
+                        return
+                    }
+                    if (result === "Open Settings") {
+                        getJConsole().appendLine(`User chose to open settings: ${notebookUri}`)
+                        vscode.commands.executeCommand("workbench.action.openSettings", "jupytextSync.deleteOnNotebookClose")
+                        return
+                    }
+                    // Else delete
+                }
+                
+                // Delete the file by moving it to trash
+                try {
+                    await vscode.workspace.fs.delete(notebookUri, {useTrash: true})
+                    getJConsole().appendLine(`Deleted notebook (moved to trash): ${notebookUri}`)
+                    if (!needsConfirmation) {
+                        vscode.window.showInformationMessage(`Deleted notebook ${notebookUri}`)
+                    }
+                    return
+                } catch (error) {
+                    const msg = `Failed to delete notebook ${notebookUri}: ${error}`
+                    getJConsole().appendLine(msg)
+                    vscode.window.showErrorMessage(msg)
+                }
+            } catch (error) {
+                const msg = `Error in handleNotebookClose for ${notebookUri.fsPath}: ${error}`
+                getJConsole().appendLine(msg)
+                console.error(msg, error)
             }
-            if (result === "Open Settings") {
-                getJConsole().appendLine(`User chose to open settings: ${notebookUri}`)
-                vscode.commands.executeCommand("workbench.action.openSettings", "jupytextSync.deleteOnNotebookClose")
-                return
-            }
-            // Else delete
-        }
-        
-        // Delete the file by moving it to trash
-        try {
-            await vscode.workspace.fs.delete(notebookUri, {useTrash: true})
-            getJConsole().appendLine(`Deleted notebook (moved to trash): ${notebookUri}`)
-            if (!needsConfirmation) {
-                vscode.window.showInformationMessage(`Deleted notebook ${notebookUri}`)
-            }
-            return
-        } catch (error) {
-            const msg = `Failed to delete notebook ${notebookUri}: ${error}`
-            getJConsole().appendLine(msg)
-            vscode.window.showErrorMessage(msg)
-        }
-    } catch (error) {
-        const msg = `Error in handleNotebookClose for ${notebookUri.fsPath}: ${error}`
-        getJConsole().appendLine(msg)
-        console.error(msg, error)
-    }
+        },
+        "deleteOnClose",
+        "",
+    )
 }
 
 async function updateEventHandlers(context: vscode.ExtensionContext) {
