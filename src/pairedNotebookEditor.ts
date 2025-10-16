@@ -28,7 +28,7 @@ export class PairedNotebookEditorProvider implements vscode.CustomTextEditorProv
         _token: vscode.CancellationToken,
     ): Promise<void> {
         getJConsole().appendLine(`PairedNotebookEditor: Opening ${document.uri}`)
-        
+
         // Check if auto-open is enabled
         const autoOpenEnabled = config().get<boolean>("autoOpenNotebook", true)
         if (!autoOpenEnabled) {
@@ -36,7 +36,7 @@ export class PairedNotebookEditorProvider implements vscode.CustomTextEditorProv
             await this.fallbackToDefaultEditor(document, webviewPanel)
             return
         }
-        
+
         // Check if jupytext is available
         if (!getJupytext()) {
             getJConsole().appendLine(`PairedNotebookEditor: Jupytext not available, falling back to default editor`)
@@ -105,18 +105,18 @@ export class PairedNotebookEditorProvider implements vscode.CustomTextEditorProv
                 // Ignore disposal errors
                 const msg = `PairedNotebookEditor: Error during disposal (ignored)`
                 console.error(msg, ex)
-                getJConsole().appendLine(msg+ ": " + ex)
+                getJConsole().appendLine(msg + ": " + ex)
             }
 
             try {
-                // Open with default text editor - we need to explicitly specify the 
+                // Open with default text editor - we need to explicitly specify the
                 // "default" editor to avoid VS Code opening with our custom editor again
                 await vscode.commands.executeCommand("vscode.openWith", document.uri, "default")
                 getJConsole().appendLine(`PairedNotebookEditor: Opened ${document.uri} with default editor`)
             } catch (ex) {
                 const msg = `PairedNotebookEditor: Error opening default editor`
                 console.error(msg, ex)
-                getJConsole().appendLine(msg+ ": " + ex)
+                getJConsole().appendLine(msg + ": " + ex)
             }
         })
     }

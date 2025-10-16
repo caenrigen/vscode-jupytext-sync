@@ -55,7 +55,7 @@ export function unmarkNotebookAsAutoCreated(notebookUri: vscode.Uri): void {
     }
     const autoCreated = extensionContext.workspaceState.get<string[]>(AUTO_CREATED_NOTEBOOKS_KEY, [])
     const notebookPath = notebookUri.fsPath
-    const filtered = autoCreated.filter(path => path !== notebookPath)
+    const filtered = autoCreated.filter((path) => path !== notebookPath)
     if (filtered.length < autoCreated.length) {
         extensionContext.workspaceState.update(AUTO_CREATED_NOTEBOOKS_KEY, filtered)
         getJConsole().appendLine(`Unmarked notebook as auto-created: ${notebookPath}`)
@@ -98,8 +98,8 @@ export async function setJupytext(jupytext: Jupytext | undefined, showMessage: b
     }
     getJConsole().appendLine(msg)
     msg +=
-    " You can change it in the " +
-    "[settings](command:workbench.action.openSettings?%5B%22%40id%3AjupytextSync.pythonExecutable%22%5D)."
+        " You can change it in the " +
+        "[settings](command:workbench.action.openSettings?%5B%22%40id%3AjupytextSync.pythonExecutable%22%5D)."
     if (showMessage) {
         vscode.window.showInformationMessage(msg) // don't await
     }
@@ -274,7 +274,7 @@ function getPairingGroupKey(fileUri: vscode.Uri): string {
 /**
  * Queue an operation for a group of paired files to ensure sequential execution.
  * All operations on the same paired file group will be serialized.
- * 
+ *
  * @param uri - The URI of any file in the paired group
  * @param operation - The operation to execute (should use internal functions, not queued ones)
  * @param operationName - Name of the operation for logging
@@ -287,7 +287,7 @@ export async function queueOperation<T>(
     logPrefix: string = "",
 ): Promise<T> {
     const groupKey = getPairingGroupKey(uri)
-    
+
     const wrappedOperation = async (): Promise<T> => {
         const msg = `${logPrefix}Starting ${operationName} for group ${groupKey}`
         getJConsole().appendLine(msg)
@@ -308,12 +308,13 @@ export async function queueOperation<T>(
 
     // Chain the new operation to run after the current queue
     // Even if previous operation failed, continue with this one
-    const newQueue = currentQueue
-        .then(() => wrappedOperation())
-        .catch(() => wrappedOperation())
+    const newQueue = currentQueue.then(() => wrappedOperation()).catch(() => wrappedOperation())
 
     // Update the queue (don't let failed operations break the queue)
-    operationQueues.set(groupKey, newQueue.catch(() => undefined))
+    operationQueues.set(
+        groupKey,
+        newQueue.catch(() => undefined),
+    )
 
     // Return the result of this specific operation
     return newQueue
@@ -340,18 +341,12 @@ async function runJupytextSyncInternal(
     }
 }
 
-// External API - queued version
 export async function runJupytextSync(
     uri: vscode.Uri,
     showError: boolean = true,
     logPrefix: string = "",
 ): Promise<string | undefined> {
-    return queueOperation(
-        uri,
-        () => runJupytextSyncInternal(uri, showError, logPrefix),
-        "sync",
-        logPrefix,
-    )
+    return queueOperation(uri, () => runJupytextSyncInternal(uri, showError, logPrefix), "sync", logPrefix)
 }
 
 // Internal implementation - does the actual setFormats without queuing
@@ -359,14 +354,8 @@ async function runJupytextSetFormatsInternal(uri: vscode.Uri, formats: string[])
     return await runJupytext([...getSetFormatsArgs(formats.join(",")), uri.fsPath])
 }
 
-// External API - queued version
 export async function runJupytextSetFormats(uri: vscode.Uri, formats: string[]) {
-    return queueOperation(
-        uri,
-        () => runJupytextSetFormatsInternal(uri, formats),
-        "setFormats",
-        "",
-    )
+    return queueOperation(uri, () => runJupytextSetFormatsInternal(uri, formats), "setFormats", "")
 }
 
 export function isSupportedFile(uri: vscode.Uri): boolean {
@@ -439,7 +428,7 @@ async function getFileUri(fileUri?: vscode.Uri) {
     }
 }
 
-function getSuggestedFormats(uri: vscode.Uri) : string[] {
+function getSuggestedFormats(uri: vscode.Uri): string[] {
     let ext = path.extname(uri.fsPath)
     const defaultFormats = getDefaultFormats()
     let suggestFormatsStr = defaultFormats[ext] || "default"
@@ -521,7 +510,10 @@ export async function pair(fileUri?: vscode.Uri) {
 
 // Internal implementation - reads paired formats without queuing
 // Export for use within other queued operations to avoid nested queuing
-export async function readPairedFormatsInternal(fileUri: vscode.Uri, logPrefix: string = ""): Promise<string[] | undefined> {
+export async function readPairedFormatsInternal(
+    fileUri: vscode.Uri,
+    logPrefix: string = "",
+): Promise<string[] | undefined> {
     const jupytext = getJupytext()
     if (!jupytext) {
         const msg = `${logPrefix}Jupytext not set, cannot get paired formats for '${fileUri}'`
@@ -554,14 +546,8 @@ export async function readPairedFormatsInternal(fileUri: vscode.Uri, logPrefix: 
     }
 }
 
-// External API - queued version
 export async function readPairedFormats(fileUri: vscode.Uri, logPrefix: string = ""): Promise<string[] | undefined> {
-    return queueOperation(
-        fileUri,
-        () => readPairedFormatsInternal(fileUri, logPrefix),
-        "readPairedFormats",
-        logPrefix,
-    )
+    return queueOperation(fileUri, () => readPairedFormatsInternal(fileUri, logPrefix), "readPairedFormats", logPrefix)
 }
 
 export function getNotebookUriFromFormats(fileUri: vscode.Uri, formats: string[]): vscode.Uri {
@@ -614,12 +600,16 @@ export async function openPairedNotebookProgress(fileUri?: vscode.Uri, formats: 
             title: "Jupytext: ",
             cancellable: false,
         },
-        async (progress) => await openPairedNotebook(fileUri, formats, progress)
+        async (progress) => await openPairedNotebook(fileUri, formats, progress),
     )
     await syncNotification
 }
 
-export async function openPairedNotebook(fileUri?: vscode.Uri, formats: string[] | undefined = undefined, progress: vscode.Progress<{message: string, increment?: number}> | undefined = undefined) {
+export async function openPairedNotebook(
+    fileUri?: vscode.Uri,
+    formats: string[] | undefined = undefined,
+    progress: vscode.Progress<{message: string; increment?: number}> | undefined = undefined,
+) {
     let msg = `Opening as paired notebook '${fileUri}'`
     let uri = await getFileUri(fileUri)
     getJConsole().appendLine(msg)
@@ -644,7 +634,7 @@ export async function openPairedNotebook(fileUri?: vscode.Uri, formats: string[]
     // Determine the notebook path and check if it exists before syncing
     const notebookUri = getNotebookUriFromFormats(uri, formats)
     const notebookExistedBefore = fs.existsSync(notebookUri.fsPath)
-    
+
     if (formats.length <= 1 || !formats.some((f) => f.endsWith("ipynb"))) {
         progress?.report({message: "Inserting ipynb format"})
         formats = await insertIpynbFormat(uri, formats)
@@ -656,12 +646,12 @@ export async function openPairedNotebook(fileUri?: vscode.Uri, formats: string[]
         progress?.report({message: "Syncing"})
         await runJupytextSync(uri)
     }
-    
+
     // If the notebook was created by the sync operation, mark it as auto-created
     if (!notebookExistedBefore && fs.existsSync(notebookUri.fsPath)) {
         markNotebookAsAutoCreated(notebookUri)
     }
-    
+
     // Extract the subdir from the paired formats and open the ipynb file as a notebook
     try {
         progress?.report({message: "Opening notebook"})
