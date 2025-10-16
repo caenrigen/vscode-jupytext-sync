@@ -274,9 +274,13 @@ async function handleNotebookCloseInternal(notebookUri: vscode.Uri, deleteOnClos
         // Delete the file by moving it to trash
         try {
             await vscode.workspace.fs.delete(notebookUri, {useTrash: true})
-            getJConsole().appendLine(`Deleted notebook (moved to trash): ${notebookUri}`)
+            const msg =
+                `Notebook moved to trash: ${notebookUri}. ` +
+                "Configurable in the [settings]" +
+                "(command:workbench.action.openSettings?%5B%22%40id%3AjupytextSync.deleteOnNotebookClose%22%5D)."
+            getJConsole().appendLine(msg)
             if (!needsConfirmation) {
-                vscode.window.showInformationMessage(`Deleted notebook ${notebookUri}`)
+                vscode.window.showInformationMessage(msg)
             }
             return
         } catch (ex) {

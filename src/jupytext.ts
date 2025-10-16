@@ -98,7 +98,7 @@ export async function setJupytext(jupytext: Jupytext | undefined, showMessage: b
     }
     getJConsole().appendLine(msg)
     msg +=
-        " You can change it in the " +
+        " Configurable in the " +
         "[settings](command:workbench.action.openSettings?%5B%22%40id%3AjupytextSync.pythonExecutable%22%5D)."
     if (showMessage) {
         vscode.window.showInformationMessage(msg) // don't await
@@ -288,23 +288,22 @@ export async function queueOperation<T>(
     operationName: string,
     logPrefix: string = "",
 ): Promise<T> {
-    const groupKey = getPairingGroupKey(uri)
-
     const wrappedOperation = async (): Promise<T> => {
-        const msg = `${logPrefix}Starting ${operationName} for group ${groupKey}`
+        const msg = `${logPrefix}Starting ${operationName} for ${uri}`
         getJConsole().appendLine(msg)
         try {
             const result = await operation()
-            const msg = `${logPrefix}Completed ${operationName} for group ${groupKey}`
+            const msg = `${logPrefix}Completed ${operationName} for ${uri}`
             getJConsole().appendLine(msg)
             return result
         } catch (ex) {
-            const msg = `${logPrefix}Failed ${operationName} for group ${groupKey}: ${ex}`
+            const msg = `${logPrefix}Failed ${operationName} for ${uri}: ${ex}`
             getJConsole().appendLine(msg)
             throw ex
         }
     }
 
+    const groupKey = getPairingGroupKey(uri)
     // Get the current queue for this group (or create empty promise if none exists)
     const currentQueue = operationQueues.get(groupKey) || Promise.resolve()
 
