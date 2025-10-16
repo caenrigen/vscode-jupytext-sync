@@ -27,9 +27,9 @@ export function setExtensionContext(context: vscode.ExtensionContext): void {
     extensionContext = context
 }
 
-export function markNotebookAsAutoCreated(notebookUri: vscode.Uri): void {
+export function markNotebookAsAutoCreated(notebookUri: vscode.Uri, logPrefix: string = ""): void {
     if (!extensionContext) {
-        getJConsole().appendLine("Warning: Extension context not set, cannot track auto-created notebook")
+        getJConsole().appendLine(`${logPrefix}Extension context not set, cannot track auto-created notebook`)
         return
     }
     const autoCreated = extensionContext.workspaceState.get<string[]>(AUTO_CREATED_NOTEBOOKS_KEY, [])
@@ -37,7 +37,7 @@ export function markNotebookAsAutoCreated(notebookUri: vscode.Uri): void {
     if (!autoCreated.includes(notebookPath)) {
         autoCreated.push(notebookPath)
         extensionContext.workspaceState.update(AUTO_CREATED_NOTEBOOKS_KEY, autoCreated)
-        getJConsole().appendLine(`Marked notebook as auto-created: ${notebookPath}`)
+        getJConsole().appendLine(`${logPrefix}Marked notebook as auto-created: ${notebookPath}`)
     }
 }
 
@@ -49,7 +49,7 @@ export function isNotebookAutoCreated(notebookUri: vscode.Uri): boolean {
     return autoCreated.includes(notebookUri.fsPath)
 }
 
-export function unmarkNotebookAsAutoCreated(notebookUri: vscode.Uri): void {
+export function unmarkNotebookAsAutoCreated(notebookUri: vscode.Uri, logPrefix: string = ""): void {
     if (!extensionContext) {
         return
     }
@@ -58,7 +58,7 @@ export function unmarkNotebookAsAutoCreated(notebookUri: vscode.Uri): void {
     const filtered = autoCreated.filter((path) => path !== notebookPath)
     if (filtered.length < autoCreated.length) {
         extensionContext.workspaceState.update(AUTO_CREATED_NOTEBOOKS_KEY, filtered)
-        getJConsole().appendLine(`Unmarked notebook as auto-created: ${notebookPath}`)
+        getJConsole().appendLine(`${logPrefix}Unmarked notebook as auto-created: ${notebookPath}`)
     }
 }
 
@@ -172,11 +172,12 @@ export async function runJupytext(
         // const cmdBase = [jupytext.executable, "-m", "jupytext"]
         const cmdBase = [jupytext.executable, "-c", injectTimestamp("jupytext", logPrefix)]
         const output = await runCommand(cmdBase.concat(cmdArgs), cwd)
+        // Don't prefix with logPrefix, already done by injectTimestamp
         getJConsole().appendLine(output)
         return output
     } catch (ex) {
         const msg = `Failed to run Jupytext: ${ex}`
-        getJConsole().appendLine(msg)
+        getJConsole().appendLine(`${logPrefix}${msg}`)
         if (showError) {
             const selection = await vscode.window.showErrorMessage(
                 `Failed to run Jupytext. See output for details.`,
@@ -310,12 +311,13 @@ export async function queueOperation<T>(
     // Chain the new operation to run after the current queue
     // Even if previous operation failed, continue with this one
     const newQueue = currentQueue.then(() => wrappedOperation()).catch(() => wrappedOperation())
-
     // Update the queue (don't let failed operations break the queue)
     operationQueues.set(
         groupKey,
         newQueue.catch(() => undefined),
     )
+    const msg = `${logPrefix}Queued ${operationName} for ${uri}`
+    getJConsole().appendLine(msg)
 
     // Return the result of this specific operation
     return newQueue
@@ -347,16 +349,16 @@ export async function runJupytextSync(
     showError: boolean = true,
     logPrefix: string = "",
 ): Promise<string | undefined> {
-    return queueOperation(uri, () => runJupytextSyncInternal(uri, showError, logPrefix), "sync", logPrefix)
+    return queueOperation(uri, () => runJupytextSyncInternal(uri, showError, logPrefix), "Sync", logPrefix)
 }
 
 // Internal implementation - does the actual setFormats without queuing
-async function runJupytextSetFormatsInternal(uri: vscode.Uri, formats: string[]) {
-    return await runJupytext([...getSetFormatsArgs(formats.join(",")), uri.fsPath])
+async function runJupytextSetFormatsInternal(uri: vscode.Uri, formats: string[], logPrefix: string = "") {
+    return await runJupytext([...getSetFormatsArgs(formats.join(",")), uri.fsPath], true, logPrefix)
 }
 
-export async function runJupytextSetFormats(uri: vscode.Uri, formats: string[]) {
-    return queueOperation(uri, () => runJupytextSetFormatsInternal(uri, formats), "setFormats", "")
+export async function runJupytextSetFormats(uri: vscode.Uri, formats: string[], logPrefix: string = "") {
+    return queueOperation(uri, () => runJupytextSetFormatsInternal(uri, formats, logPrefix), "SetFormats", logPrefix)
 }
 
 export function isSupportedFile(uri: vscode.Uri): boolean {
@@ -364,10 +366,14 @@ export function isSupportedFile(uri: vscode.Uri): boolean {
     return supportedExtensions.includes(ext)
 }
 
-export async function handleDocument(document: vscode.TextDocument | vscode.NotebookDocument, eventName: string) {
+export function makeLogPrefix(eventName: string): string {
     let eventId = Math.random().toString(36)
     eventId = eventId.substring(eventId.length - 4)
-    const logPrefix = `${eventName},${eventId}: `
+    return `${eventName},${eventId}: `
+}
+
+export async function handleDocument(document: vscode.TextDocument | vscode.NotebookDocument, eventName: string) {
+    const logPrefix = makeLogPrefix(eventName)
 
     const jupytext = getJupytext()
     if (!jupytext) {
@@ -376,8 +382,6 @@ export async function handleDocument(document: vscode.TextDocument | vscode.Note
         return
     }
     if (isSupportedFile(document.uri) && document.uri.scheme === "file") {
-        const msg = `${logPrefix}${document.uri}`
-        getJConsole().appendLine(msg)
         const vMin = "1.17.3"
         if (compareVersions(jupytext.jupytextVersion, vMin) < 0) {
             const msg = `${logPrefix}Jupytext ${jupytext.jupytextVersion} < ${vMin} workaround: check paired formats...`
@@ -393,7 +397,7 @@ export async function handleDocument(document: vscode.TextDocument | vscode.Note
             // some files will be paired unintentionally.
             const pairedFormats = await readPairedFormats(document.uri, logPrefix)
             if (!pairedFormats) {
-                const msg = `${logPrefix}No paired formats in '${document.uri}', skipping sync`
+                const msg = `${logPrefix}No paired formats in ${document.uri}, skipping sync`
                 getJConsole().appendLine(msg)
                 return
             }
@@ -453,6 +457,7 @@ export async function setFormats(
     askFormats: boolean | undefined = undefined,
     formats: string[] | undefined = undefined,
     requireIpynbFormat: boolean = false,
+    logPrefix: string = "",
 ): Promise<[vscode.Uri | undefined, string[] | undefined]> {
     const uri = await getFileUri(fileUri)
     if (!uri) {
@@ -499,14 +504,21 @@ export async function setFormats(
     if (formats === undefined || formats.length <= 1) {
         return [uri, undefined]
     }
-    await runJupytextSetFormats(uri, formats)
+    await runJupytextSetFormats(uri, formats, logPrefix)
     return [uri, formats]
 }
 
 // Use this in package.json to pair documents, otherwise VSCode injects more arguments
 // into setFormats' arguments.
 export async function pair(fileUri?: vscode.Uri) {
-    return await setFormats(fileUri, config().get<boolean>("askFormats.onPairDocuments", true), undefined)
+    const logPrefix = makeLogPrefix("Pair")
+    return await setFormats(
+        fileUri,
+        config().get<boolean>("askFormats.onPairDocuments", true),
+        undefined,
+        false,
+        logPrefix,
+    )
 }
 
 // Internal implementation - reads paired formats without queuing
@@ -517,7 +529,7 @@ export async function readPairedFormatsInternal(
 ): Promise<string[] | undefined> {
     const jupytext = getJupytext()
     if (!jupytext) {
-        const msg = `${logPrefix}Jupytext not set, cannot get paired formats for '${fileUri}'`
+        const msg = `${logPrefix}Jupytext not set, cannot get paired formats for ${fileUri}`
         getJConsole().appendLine(msg)
         return undefined
     }
@@ -537,11 +549,11 @@ export async function readPairedFormatsInternal(
         const cwd = path.dirname(fileUri.fsPath)
         // Will be empty string if file has no paired formats
         const formatsStr = await runCommand([jupytext.executable, "-c", py], cwd)
-        let msg = `${logPrefix}Read paired formats for '${fileUri}': '${formatsStr}'`
+        let msg = `${logPrefix}Read paired formats for ${fileUri}: ${formatsStr}`
         getJConsole().appendLine(msg)
         return formatsStr ? formatsStr.split(",") : []
     } catch (ex) {
-        const msg = `${logPrefix}Failed to get paired formats for '${fileUri}': ${ex}`
+        const msg = `${logPrefix}Failed to get paired formats for ${fileUri}: ${ex}`
         getJConsole().appendLine(msg)
         return undefined
     }
@@ -564,11 +576,11 @@ export function getNotebookUriFromFormats(fileUri: vscode.Uri, formats: string[]
             return vscode.Uri.file(notebookPath)
         }
     }
-    throw new Error(`No ipynb format found in paired formats: '${formats.join(",")}'`)
+    throw new Error(`No ipynb format found in paired formats: ${formats.join(",")}`)
 }
 
-async function insertIpynbFormat(fileUri: vscode.Uri, formats: string[]) {
-    let msg = `Not paired with a .ipynb notebook: '${fileUri}', pairing`
+async function insertIpynbFormat(fileUri: vscode.Uri, formats: string[], logPrefix: string = "") {
+    let msg = `${logPrefix}Not paired with a .ipynb notebook: ${fileUri}, pairing`
     getJConsole().appendLine(msg)
     const [_, updatedFormats] = await setFormats(
         fileUri,
@@ -578,30 +590,35 @@ async function insertIpynbFormat(fileUri: vscode.Uri, formats: string[]) {
         // in the script's metadata.
         formats ? ["ipynb", ...formats] : undefined,
         true,
+        logPrefix,
     )
     if (updatedFormats === undefined || updatedFormats.length <= 1) {
-        msg = `Aborted or failed to pair '${fileUri}'`
+        msg = `${logPrefix}Aborted or failed to pair ${fileUri}`
         getJConsole().appendLine(msg)
         return undefined
     }
-    msg = `Paired: '${fileUri}' with '${updatedFormats.join(",")}' formats`
+    msg = `${logPrefix}Paired: ${fileUri} with '${updatedFormats.join(",")}' formats`
     getJConsole().appendLine(msg)
     return updatedFormats
 }
 
 // Wrapper to deal with the potential arguments that VS Code might be injecting.
 export async function openPairedNotebookCommand(fileUri?: vscode.Uri) {
-    return await openPairedNotebookProgress(fileUri)
+    return await openPairedNotebookProgress(fileUri, undefined, makeLogPrefix("openPairedNotebookCommand"))
 }
 
-export async function openPairedNotebookProgress(fileUri?: vscode.Uri, formats: string[] | undefined = undefined) {
+export async function openPairedNotebookProgress(
+    fileUri?: vscode.Uri,
+    formats: string[] | undefined = undefined,
+    logPrefix: string = "",
+) {
     const syncNotification = vscode.window.withProgress(
         {
             location: vscode.ProgressLocation.Notification,
             title: "Jupytext: ",
             cancellable: false,
         },
-        async (progress) => await openPairedNotebook(fileUri, formats, progress),
+        async (progress) => await openPairedNotebook(fileUri, formats, progress, logPrefix),
     )
     await syncNotification
 }
@@ -610,23 +627,25 @@ export async function openPairedNotebook(
     fileUri?: vscode.Uri,
     formats: string[] | undefined = undefined,
     progress: vscode.Progress<{message: string; increment?: number}> | undefined = undefined,
+    logPrefix: string = "",
 ) {
-    let msg = `Opening as paired notebook '${fileUri}'`
+    logPrefix = logPrefix || makeLogPrefix("openPairedNotebook")
+    let msg = `${logPrefix}Opening as paired notebook ${fileUri}`
     let uri = await getFileUri(fileUri)
     getJConsole().appendLine(msg)
     if (!uri) {
-        msg = `Failed to open as paired notebook '${uri}'`
-        getJConsole().appendLine(msg)
+        msg = `Failed to open as paired notebook ${uri}`
+        getJConsole().appendLine(`${logPrefix}${msg}`)
         vscode.window.showErrorMessage(msg)
         return
     }
 
     if (formats === undefined) {
         progress?.report({message: "Reading formats"})
-        formats = await readPairedFormats(uri)
+        formats = await readPairedFormats(uri, logPrefix)
         if (formats === undefined) {
-            msg = `Failed to get paired formats for '${uri}'. Aborting.`
-            getJConsole().appendLine(msg)
+            msg = `Failed to get paired formats for ${uri}. Aborting.`
+            getJConsole().appendLine(`${logPrefix}${msg}`)
             vscode.window.showErrorMessage(msg)
             return
         }
@@ -638,19 +657,19 @@ export async function openPairedNotebook(
 
     if (formats.length <= 1 || !formats.some((f) => f.endsWith("ipynb"))) {
         progress?.report({message: "Inserting ipynb format"})
-        formats = await insertIpynbFormat(uri, formats)
+        formats = await insertIpynbFormat(uri, formats, logPrefix)
         if (formats === undefined) {
             return // Failed to pair or cancelled by the user
         }
     } else {
         // Sync before opening the notebook, just in case
         progress?.report({message: "Syncing"})
-        await runJupytextSync(uri)
+        await runJupytextSync(uri, true, logPrefix)
     }
 
     // If the notebook was created by the sync operation, mark it as auto-created
     if (!notebookExistedBefore && fs.existsSync(notebookUri.fsPath)) {
-        markNotebookAsAutoCreated(notebookUri)
+        markNotebookAsAutoCreated(notebookUri, logPrefix)
     }
 
     // Extract the subdir from the paired formats and open the ipynb file as a notebook
@@ -660,9 +679,10 @@ export async function openPairedNotebook(
         // await vscode.workspace.openNotebookDocument(notebookUri)
         await vscode.commands.executeCommand("vscode.openWith", notebookUri, "jupyter-notebook")
         return
-    } catch (error) {
-        msg = `${error}`
-        getJConsole().appendLine(msg)
+    } catch (ex) {
+        msg = `Failed to open notebook ${notebookUri}: ${ex}`
+        getJConsole().appendLine(`${logPrefix}${msg}`)
+        console.error(`${logPrefix}${msg}`, ex)
         vscode.window.showErrorMessage(msg)
         return
     }
