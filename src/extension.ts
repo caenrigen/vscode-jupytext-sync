@@ -255,7 +255,7 @@ async function handleNotebookCloseInternal(uri: vscode.Uri, deleteOnClose: strin
     if (needsConfirmation) {
       const result = await vscode.window.showWarningMessage(
         `Delete paired notebook ${uri}?`,
-        {modal: true},
+        {modal: true, detail: "Click 'Open Settings' to disable this prompt or customize the behavior."},
         "Delete", // The first is the default action for pressing enter, at least on macOS
         "Open Settings",
         "Keep", // The last is the default for pressing space bar, at least on macOS
