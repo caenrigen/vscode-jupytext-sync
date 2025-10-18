@@ -38,8 +38,8 @@ This extension solves several common annoyances and provides handy features for 
   - Automatically syncs paired files (`.ipynb` and text-based formats like `.py`, `.md`) when you open, save, or close them. This ensures that your notebook and its text representation are always in sync.
   - Configuration options allow you to customize which events trigger a sync (on open, on save, on close for both text documents and notebook documents). See the `jupytextSync.syncDocuments` setting for details.
 - **Seamless Notebook-First Workflow**:
-  - **Auto-open notebooks**: When you open a paired text file (e.g., `.py`, `.md`), the extension automatically opens the paired `.ipynb` notebook instead, providing a seamless editing experience. This behavior can be customized via the `jupytextSync.autoOpenNotebook` setting.
-  - **Auto-cleanup**: Optionally delete the `.ipynb` file when closing the notebook editor, keeping your workspace clean when the text file is your primary source of truth. Deleted files are moved to trash and can be recovered. See the `jupytextSync.deleteOnNotebookClose` setting for details.
+  - **Auto-open notebooks**: When you open a paired text file (e.g., `.py`, `.md`), the extension can automatically open the paired `.ipynb` notebook instead, providing a seamless editing experience. This behavior can be enabled via the `jupytextSync.autoOpenNotebook` setting.
+  - **Auto-cleanup**: Optionally delete the `.ipynb` file when closing the notebook editor, keeping your workspace clean when the text file is your primary source of truth. Deleted files are moved to trash and can be recovered. This feature is opt-in. See the `jupytextSync.deleteOnNotebookClose` setting for details.
 - **Open Text Files as Notebooks**:
   - Open Jupytext-compatible text files (e.g., `.py`, `.md` with Jupytext metadata) as notebooks using the "**Open as paired Notebook via Jupytext**" command. A notebook file will be created and all your edits in it will be synced to the text file(s).
 - **Persistent Cell Outputs**: All files are saved to disk, meaning cell outputs are not lost when reopening a notebook, providing a more consistent experience.
@@ -65,9 +65,9 @@ This extension solves several common annoyances and provides handy features for 
     - Use the "**Pair via Jupytext**" command (accessible from the Command Palette, context menus, or toolbar icons).
     - You'll be prompted to choose the Jupytext formats (e.g., `ipynb,py:percent`) unless disabled via `jupytextSync.askFormats.onPairDocuments`. The default suggestion is configurable per file extension using `jupytextSync.defaultFormats`.
 2.  **Work in the Notebook**:
-    - With `jupytextSync.autoOpenNotebook` enabled (default), simply open your paired text file (e.g., `.py`, `.md`), and the extension will automatically open the `.ipynb` notebook for you.
+    - With `jupytextSync.autoOpenNotebook` enabled, simply open your paired text file (e.g., `.py`, `.md`), and the extension will automatically open the `.ipynb` notebook for you.
     - The extension will automatically keep the paired files in sync upon saving (or other configured events via `jupytextSync.syncDocuments`).
-    - When you close the notebook, you can optionally have the `.ipynb` file automatically deleted (configurable via `jupytextSync.deleteOnNotebookClose`), keeping your workspace clean while preserving your text file as the source of truth.
+    - When you close the notebook, you can optionally have the `.ipynb` file automatically deleted (configurable via `jupytextSync.deleteOnNotebookClose`, which defaults to "never"), keeping your workspace clean while preserving your text file as the source of truth.
 3.  **Version Control**:
     - Commit the text-based file (e.g., `.py`, `.md`) to your Git repository. This file is human-readable and diff-friendly.
     - Optionally, you can also commit the `.ipynb` file if you prefer to version control the outputs too.
@@ -111,7 +111,7 @@ You can configure the extension's behavior via VSCode settings (search for `jupy
     - `"yes"`: Always delete if the notebook has paired formats.
     - `"if auto created"`: Only delete if the notebook was auto-created by this extension via "Open as paired Notebook" or by opening a paired text file with the custom editor.
   - **Details**: Deleted files are moved to the system trash/recycle bin and can be recovered. This feature is designed for workflows where the `.ipynb` file is generated from source text files (e.g., `.py`, `.md`) and the text file is the primary source of truth.
-  - **Default**: `"ask"`
+  - **Default**: `"never"`
 
 - **`jupytextSync.syncDocuments`**:
 

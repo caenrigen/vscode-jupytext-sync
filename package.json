@@ -56,13 +56,13 @@
     "customEditors": [
       {
         "viewType": "jupytextSync.pairedNotebookEditor",
-        "displayName": "Jupytext Paired Notebook",
+        "displayName": "Jupytext Paired Notebook (Beta)",
         "selector": [
           {
             "filenamePattern": "{*.R,*.Rmd,*.clj,*.coco,*.cpp,*.cs,*.do,*.fs,*.fsx,*.go,*.gp,*.groovy,*.hs,*.java,*.jl,*.js,*.lgt,*.logtalk,*.lua,*.m,*.mac,*.markdown,*.md,*.ml,*.mnb,*.myst,*.mystnb,*.pro,*.ps1,*.py,*.q,*.qmd,*.r,*.resource,*.robot,*.rs,*.sage,*.sas,*.scala,*.scm,*.sh,*.sos,*.ss,*.tcl,*.ts,*.wolfram,*.xsh}"
           }
         ],
-        "priority": "default"
+        "priority": "option"
       }
     ],
     "configuration": {
@@ -82,7 +82,7 @@
         },
         "jupytextSync.deleteOnNotebookClose": {
           "type": "string",
-          "default": "ask",
+          "default": "never",
           "enum": [
             "never",
             "ask",

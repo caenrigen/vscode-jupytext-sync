@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.3.2 2025-10-18
+
+- Change auto-open paired notebook ("Jupytext Paired Notebook") and auto-delete paired notebook to explicitly opt-in features.
+
 ## 1.3.1 2025-10-17
 
 - Small UX enhancement
