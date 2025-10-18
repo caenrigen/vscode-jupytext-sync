@@ -30,14 +30,6 @@ export class PairedNotebookEditorProvider implements vscode.CustomTextEditorProv
     const logPrefix = makeLogPrefix("PairedNotebookEditor")
     getJConsole().appendLine(`${logPrefix}Opening ${document.uri}`)
 
-    // Check if auto-open is enabled
-    const autoOpenEnabled = config().get<boolean>("autoOpenNotebook", true)
-    if (!autoOpenEnabled) {
-      getJConsole().appendLine(`${logPrefix}Auto-open disabled, falling back to default editor`)
-      await this.fallbackToDefaultEditor(document, webviewPanel, logPrefix)
-      return
-    }
-
     // Check if jupytext is available
     if (!getJupytext()) {
       getJConsole().appendLine(`${logPrefix}Jupytext not available, falling back to default editor`)

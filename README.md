@@ -91,17 +91,6 @@ You can configure the extension's behavior via VSCode settings (search for `jupy
   - **Tip**: Use the "**Jupytext: Show Jupytext Sync Logs**" or "**Jupytext: Locate Python and Jupytext**" commands to verify which Python executable is being used.
   - **Default**: `""` (empty string, for automatic discovery)
 
-- **`jupytextSync.autoOpenNotebook`**:
-
-  - **Description**: Automatically open the paired `.ipynb` notebook when opening a text file (e.g., `.py`, `.md`) that is paired with a notebook via Jupytext.
-  - **Details**: When enabled, opening a paired text file will:
-    1. Check if the file has a paired `.ipynb` format.
-    2. Sync the files.
-    3. Open the `.ipynb` file in the Notebook Editor instead.
-  - **Tip**: This provides a seamless notebook-first editing experience for paired files. You can bypass this behavior using the "Open With..." context menu to open the file as a regular text file.
-  - **Note**: This only affects files that `jupytext` reports as paired. Unpaired files will open normally in the text editor.
-  - **Default**: `true`
-
 - **`jupytextSync.deleteOnNotebookClose`**:
 
   - **Description**: Control whether to delete the `.ipynb` notebook file when closing a paired notebook editor.
