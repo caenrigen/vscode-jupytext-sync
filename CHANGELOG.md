@@ -1,5 +1,13 @@
 # Change Log
 
+## 1.4.0 2025-11-22
+
+- Dropped support for Jupytext `<v1.17.3` to keep the code maintainable.
+- Paired paths respects Jupytext config files (e.g., paired formats in subdirectories).
+- "Open as paired Notebook" renamed to "Open paired Notebook".
+- "Open paired Notebook" will not automatically pair with a notebook. Please, first pair manually or use Jupytext config files.
+- Other code cleanup leading to small user flow changes and enhancements.
+
 ## 1.3.3 2025-10-18
 
 - Remove unnecessary `autoOpenNotebook` setting.

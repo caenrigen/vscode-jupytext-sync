@@ -87,7 +87,7 @@
             "Never delete the notebook file when closing",
             "Always ask for confirmation before deleting",
             "Always delete if the notebook has paired formats",
-            "Only delete if the notebook was auto-created by this extension via 'Open as paired Notebook' or by opening a paired text file with the custom editor"
+            "Only delete if the notebook was auto-created by this extension via 'Open paired Notebook' or by opening a paired text file with the custom editor"
           ],
           "markdownDescription": "Control whether to delete the `.ipynb` notebook file when closing a paired notebook editor.\n\nDeleted files are moved to the system trash/recycle bin and can be recovered.\n\nThis feature is designed for workflows where the `.ipynb` file is generated from source text files (e.g., `.py`, `.md`) and the text file is the primary source of truth.\n\nHover over each option for a detailed description.",
           "order": 1
@@ -307,8 +307,8 @@
       },
       {
         "command": "jupytextSync.openPairedNotebook",
-        "title": "Open as paired Notebook via Jupytext",
-        "shortTitle": "Open as Notebook",
+        "title": "Open paired Notebook via Jupytext",
+        "shortTitle": "Open paired Notebook",
         "category": "Jupytext",
         "icon": "$(notebook-template)"
       },

@@ -41,7 +41,7 @@ This extension solves several common annoyances and provides handy features for 
   - **Auto-open notebooks**: When you open a paired text file (e.g., `.py`, `.md`), the extension can automatically open the paired `.ipynb` notebook instead, providing a seamless editing experience. See the **Editor Associations** section below for configuration details.
   - **Auto-cleanup**: Optionally delete the `.ipynb` file when closing the notebook editor, keeping your workspace clean when the text file is your primary source of truth. Deleted files are moved to trash and can be recovered. This feature is opt-in. See the `jupytextSync.deleteOnNotebookClose` setting for details.
 - **Open Text Files as Notebooks**:
-  - Open Jupytext-compatible text files (e.g., `.py`, `.md` with Jupytext metadata) as notebooks using the "**Open as paired Notebook via Jupytext**" command. A notebook file will be created and all your edits in it will be synced to the text file(s).
+  - Open Jupytext-compatible text files (e.g., `.py`, `.md` with Jupytext metadata) as notebooks using the "**Open paired Notebook via Jupytext**" command. A notebook file will be created and all your edits in it will be synced to the text file(s).
 - **Persistent Cell Outputs**: All files are saved to disk, meaning cell outputs are not lost when reopening a notebook, providing a more consistent experience.
 - **Convenient Pairing Command**: The "**Pair via Jupytext**" command is accessible from multiple convenient locations:
   - Command Palette (Ctrl+Shift+P or Cmd+Shift+P)
@@ -98,7 +98,7 @@ You can configure the extension's behavior via VSCode settings (search for `jupy
     - `"never"`: Never delete the notebook file when closing.
     - `"ask"`: Always ask for confirmation before deleting.
     - `"yes"`: Always delete if the notebook has paired formats.
-    - `"if auto created"`: Only delete if the notebook was auto-created by this extension via "Open as paired Notebook" or by opening a paired text file with the custom editor.
+    - `"if auto created"`: Only delete if the notebook was auto-created by this extension via "Open paired Notebook" or by opening a paired text file with the custom editor.
   - **Details**: Deleted files are moved to the system trash/recycle bin and can be recovered. This feature is designed for workflows where the `.ipynb` file is generated from source text files (e.g., `.py`, `.md`) and the text file is the primary source of truth.
   - **Default**: `"never"`
 
@@ -212,7 +212,7 @@ This extension provides the following commands, accessible via the Command Palet
 - **`Jupytext: Show Jupytext Sync Logs`**: Opens the output channel for Jupytext Sync, showing logs which can be helpful for troubleshooting, especially for Python executable discovery.
 - **`Jupytext: Locate Python and Jupytext`**: Manually triggers Python and Jupytext discovery, showing detailed information about which Python executable and Jupytext version is being used. Useful for troubleshooting environment issues.
 - **`Jupytext: Pair via Jupytext`**: Initiates the pairing process for the active file or a file selected from the Explorer. Prompts for Jupytext formats based on `jupytextSync.askFormats.onPairDocuments` and `jupytextSync.defaultFormats`.
-- **`Jupytext: Open as paired Notebook via Jupytext`**: Opens a Jupytext-compatible text file (e.g., `.py`, `.md`) as a VS Code notebook. This is a key feature for working with text-based versions of notebooks.
+- **`Jupytext: Open paired Notebook via Jupytext`**: Opens the paired notebook (`.ipynb` file) corresponding to the text file (e.g., `.py`, `.md`) as a VS Code Notebook Editor. This is a key feature for working with text-based versions of notebooks. The text file must be first paired to a notebook (`Pair via Jupytext` or via Jupytext config files).
 - **`Jupytext: Insert Raw Code Cell Below and Focus Container`**: Inserts a new raw cell below the active cell in a notebook.
 - **`Jupytext: Insert Raw Code Cell Above and Focus Container`**: Inserts a new raw cell above the active cell in a notebook.
 - **`Jupytext: Change Cell to default Code`**: Changes the selected notebook cell(s) to the default code type.

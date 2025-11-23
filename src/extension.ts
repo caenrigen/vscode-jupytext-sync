@@ -11,7 +11,7 @@ import {
   isNotebookAutoCreated,
   unmarkNotebookAsAutoCreated,
   queueOperation,
-  readPairedFormatsInternal,
+  readPairedPathsAndFormatsInternal,
   makeLogPrefix,
 } from "./jupytext"
 import {getPythonFromConfig} from "./python"
@@ -235,13 +235,15 @@ async function handleNotebookCloseInternal(uri: vscode.Uri, deleteOnClose: strin
       shouldDelete = autoCreated
     } else if (deleteOnClose === "yes") {
       // Use internal version to avoid nested queuing
-      const formats = await readPairedFormatsInternal(uri, logPrefix)
-      const hasPairedFormats = formats !== undefined && formats.length > 1
+      const formats = await readPairedPathsAndFormatsInternal(uri, logPrefix)
+      // at least notebook and one other format
+      const hasPairedFormats = formats !== undefined && formats.length >= 2
       shouldDelete = hasPairedFormats
     } else if (deleteOnClose === "ask") {
       // Use internal version to avoid nested queuing
-      const formats = await readPairedFormatsInternal(uri, logPrefix)
-      const hasPairedFormats = formats !== undefined && formats.length > 1
+      const formats = await readPairedPathsAndFormatsInternal(uri, logPrefix)
+      // at least notebook and one other format
+      const hasPairedFormats = formats !== undefined && formats.length >= 2
       if (hasPairedFormats || autoCreated) {
         needsConfirmation = true
         shouldDelete = true // Will be confirmed below

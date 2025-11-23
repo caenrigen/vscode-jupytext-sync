@@ -1,6 +1,12 @@
 import * as vscode from "vscode"
-import {readPairedFormats, getJupytext, openPairedNotebookProgress, makeLogPrefix} from "./jupytext"
-import {getJConsole, config} from "./constants"
+import {
+  PairedPathAndFormat,
+  readPairedPathsAndFormatsInternal,
+  getJupytext,
+  openPairedNotebookWithProgress,
+  makeLogPrefix,
+} from "./jupytext"
+import {getJConsole} from "./constants"
 
 /**
  * Custom text editor provider that automatically opens paired notebooks
@@ -37,27 +43,28 @@ export class PairedNotebookEditorProvider implements vscode.CustomTextEditorProv
       return
     }
 
-    // Check if the file is paired with an ipynb notebook
     try {
-      const formats = await readPairedFormats(document.uri, logPrefix)
+      // Check if the file is paired with an ipynb notebook before attempting to open it
+      const pairedPaths = await readPairedPathsAndFormatsInternal(document.uri, logPrefix)
 
-      if (formats === undefined || formats.length <= 1) {
-        getJConsole().appendLine(`${logPrefix}File not paired, falling back to default editor`)
+      if (pairedPaths === undefined) {
+        getJConsole().appendLine(`${logPrefix}Failed to get paired paths, falling back to default editor`)
         await this.fallbackToDefaultEditor(document, webviewPanel, logPrefix)
         return
       }
       // Check if one of the paired formats is ipynb
-      if (!formats.some((f) => f.includes("ipynb"))) {
-        getJConsole().appendLine(`${logPrefix}File is paired but not with .ipynb, falling back to default editor`)
+      if (!pairedPaths.some(([path, format]) => format.extension === ".ipynb")) {
+        getJConsole().appendLine(`${logPrefix}File not paired with .ipynb, falling back to default editor`)
         await this.fallbackToDefaultEditor(document, webviewPanel, logPrefix)
         return
       }
       // File is paired with .ipynb, proceed to open the notebook
       getJConsole().appendLine(`${logPrefix}File is paired with .ipynb, opening notebook`)
-      await this.openPairedNotebook(document, webviewPanel, formats, logPrefix)
+      // Pass the paired paths in so that we don't run the command twice
+      await this.openPairedNotebook(document, webviewPanel, pairedPaths, logPrefix)
     } catch (ex) {
-      getJConsole().appendLine(`${logPrefix}Error checking paired formats: ${ex}`)
-      vscode.window.showErrorMessage(`Failed to check if file is paired: ${ex}`)
+      getJConsole().appendLine(`${logPrefix}Error opening paired notebook: ${ex}`)
+      vscode.window.showErrorMessage(`Failed to open paired notebook: ${ex}`)
       await this.fallbackToDefaultEditor(document, webviewPanel, logPrefix)
     }
   }
@@ -65,12 +72,12 @@ export class PairedNotebookEditorProvider implements vscode.CustomTextEditorProv
   private async openPairedNotebook(
     document: vscode.TextDocument,
     webviewPanel: vscode.WebviewPanel,
-    formats: string[],
+    pairedPaths: PairedPathAndFormat[],
     logPrefix: string = "",
   ): Promise<void> {
     const uri = document.uri
     try {
-      await openPairedNotebookProgress(uri, formats, logPrefix)
+      await openPairedNotebookWithProgress(uri, pairedPaths, logPrefix)
       getJConsole().appendLine(`${logPrefix}Successfully opened notebook ${uri}`)
       webviewPanel.dispose()
     } catch (ex) {
