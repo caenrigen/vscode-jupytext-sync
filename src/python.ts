@@ -88,7 +88,7 @@ export async function runCommand(cmdArgs: string[], cwd?: string): Promise<strin
       console.error(msg)
       return reject(stderr)
     })
-    proc.on("exit", (code: number) => {
+    proc.on("close", (code: number) => {
       stderr = stderr.trim()
       stdout = stdout.trim()
       let msg = `Exit code '${code}' during '${cmdStr}'`
@@ -105,21 +105,6 @@ export async function runCommand(cmdArgs: string[], cwd?: string): Promise<strin
       console.debug(msg)
       resolve(stdout)
     })
-    // Not sure if needed, we already get the output in the proc.on("exit")
-    // This seems duplicate
-    // proc.on("close", () => {
-    //     stdout = stdout.trim()
-    //     stderr = stderr.trim()
-    //     let msg = `Closed '${cmdStr}'`
-    //     if (stderr.length > 0) {
-    //         msg += `\n(stderr): ${stderr}`
-    //     }
-    //     if (stdout.length > 0) {
-    //         msg += `\n(stdout): ${stdout}`
-    //     }
-    //     console.debug(msg)
-    //     resolve(stdout)
-    // })
   })
 }
 
