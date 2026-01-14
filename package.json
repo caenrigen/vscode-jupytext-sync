@@ -17,6 +17,9 @@
     "Education",
     "Other"
   ],
+  "extensionKind": [
+    "workspace"
+  ],
   "keywords": [
     "python",
     "jupyter",
