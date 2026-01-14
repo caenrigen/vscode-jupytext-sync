@@ -13,6 +13,7 @@ import {
   queueOperation,
   readPairedPathsAndFormatsInternal,
   makeLogPrefix,
+  isJupytextPossiblyUsed,
 } from "./jupytext"
 import {getPythonFromConfig} from "./python"
 import {PairedNotebookEditorProvider} from "./pairedNotebookEditor"
@@ -194,8 +195,15 @@ async function locatePythonAndJupytext() {
 
 async function validatePythonAndJupytext() {
   setJupytext(undefined, false) // reset runtime jupytext
-  let pythonPath = getPythonFromConfig()
-  let findAutomatically = false
+
+  if (!(await isJupytextPossiblyUsed())) {
+    getJConsole().appendLine("Jupytext usage not detected. Skipping validation.")
+    return
+  }
+
+  const pythonPath = getPythonFromConfig()
+  let shouldAutoDiscover = false
+
   if (pythonPath) {
     const jupytext = await resolveJupytext(pythonPath)
     if (jupytext.executable && jupytext.jupytextVersion) {
@@ -207,16 +215,19 @@ async function validatePythonAndJupytext() {
         '"Open Settings" to specify the Python Executable manually.'
       console.warn(msg)
       getJConsole().appendLine(msg)
+
       const selection = await vscode.window.showWarningMessage(msg, "Find automatically", "Open Settings")
       if (selection === "Find automatically") {
-        findAutomatically = true
+        shouldAutoDiscover = true
       } else if (selection === "Open Settings") {
         vscode.commands.executeCommand("workbench.action.openSettings", "jupytextSync.pythonExecutable")
       }
     }
+  } else {
+    shouldAutoDiscover = true
   }
-  // First launch (or bad python/jupytext), try to set it automatically
-  if (!pythonPath || findAutomatically) {
+
+  if (shouldAutoDiscover) {
     await locatePythonAndJupytext()
   }
   await vscode.commands.executeCommand("setContext", "jupytextSync.supportedExtensions", getSupportedExtensions())
