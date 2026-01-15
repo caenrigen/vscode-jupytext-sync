@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.4.1 2026-01-15
+
+- Fix by [@nrontsis](https://github.com/nrontsis): Wait for subprocesses stdio outputs on exit.
+
 ## 1.4.0 2025-11-22
 
 - Dropped support for Jupytext `<v1.17.3` to keep the code maintainable.
