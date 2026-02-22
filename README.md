@@ -248,4 +248,11 @@ This extension was inspired by and builds upon the ideas from the following proj
 
 ## Related Projects
 
-- [fmilanese-1/ds_utils](https://github.com/fmilanese-1/ds_utils): A VSCode extension that has some `jupytext`-based capabilities and supports exporting notebooks to HTML via `nbconvert`, but does not include automatic synchronization of paired files.
+- [fmilanese-1/ds_utils](https://github.com/fmilanese-1/ds_utils): A [VSCode extension](https://marketplace.visualstudio.com/items?itemName=FrancoMilanese.datascientists-utils) that has some `jupytext`-based capabilities and supports exporting notebooks to HTML via `nbconvert`, but does not include, e.g., automatic synchronization of paired files.
+
+## Alternative Approaches
+
+These might help you achieve similar goals using Jupytext alternatives:
+
+- A [VSCode extension](https://marketplace.visualstudio.com/items?itemName=marimo-team.vscode-marimo) for [marimo](https://github.com/marimo-team/marimo), a reactive Python notebook that's reproducible, git-friendly, and deployable as scripts or apps.
+- A [VSCode extension](https://marketplace.visualstudio.com/items?itemName=quarto.quarto) for the [Quarto](https://quarto.org/) scientific and technical publishing system.
