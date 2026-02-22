@@ -2,7 +2,7 @@
 
 [![Screenshot](https://raw.githubusercontent.com/caenrigen/vscode-jupytext-sync/main/assets/screenshot.jpg)](https://raw.githubusercontent.com/caenrigen/vscode-jupytext-sync/main/assets/screenshot.jpg)
 
-This VSCode extension integrates [`jupytext`](https://jupytext.readthedocs.io/en/latest/)'s pairing and synchronization features, enabling automatic syncing between notebooks and their version-control-friendly text formats (`.py`, `.md`, etc.).
+This extension integrates [`jupytext`](https://jupytext.readthedocs.io/en/latest/)'s pairing and synchronization capabilities into OSS Code like IDEs (VSCode, VSCodium, etc.), enabling automatic syncing between notebooks and their version-control-friendly text formats (`.py`, `.md`, etc.).
 
 ## Demos
 
@@ -230,6 +230,12 @@ The following keybindings are available when a notebook editor is focused and yo
 - **`e`**: `Jupytext: Insert Raw Code Cell Above and Focus Container`
 - **`i i`** (press `i` twice): `jupyter.interruptkernel` (VS Code built-in)
 - **`0 0`** (press `0` twice): `jupyter.restartkernel` (VS Code built-in)
+
+## Relationship with Jupytext
+
+[Jupytext](https://jupytext.readthedocs.io/en/latest/) was created and is maintained by [Marc Wouts](https://github.com/mwouts). Jupytext Sync extension is only a wrapper around the `jupytext` command-line tool. It does not ship with the `jupytext` Python package.
+
+Marc [endorsed](https://jupytext.readthedocs.io/en/latest/vs-code.html) Jupytext Sync as the recommended VS Code extension. Additionally, this extensions shares the same logo as Jupytext with his permission.
 
 ## Acknowledgements
 

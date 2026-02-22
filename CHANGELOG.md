@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.4.2 2026-02-22
+
+- Change logo to comply with VS Code marketplace requirements.
+
 ## 1.4.1 2026-01-15
 
 - Fix by [@nrontsis](https://github.com/nrontsis): Wait for subprocesses stdio outputs on exit.
