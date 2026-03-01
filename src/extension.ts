@@ -31,7 +31,9 @@ export async function activate(context: vscode.ExtensionContext) {
   // Listen for configuration changes and update handlers accordingly
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration(async (e) => {
-      console.debug("onDidChangeConfiguration")
+      if (e.affectsConfiguration("jupytextSync")) {
+        getJConsole().appendLine("onDidChangeConfiguration: jupytextSync")
+      }
       if (
         e.affectsConfiguration("jupytextSync.syncDocuments") ||
         e.affectsConfiguration("jupytextSync.setFormatsArgs") ||

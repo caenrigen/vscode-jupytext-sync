@@ -12,7 +12,7 @@ export type MaybeJupytext = {
 }
 
 export type Jupytext = {
-  python: string
+  python: string // might be a symlink
   executable: string
   jupytextVersion: string
 }
@@ -89,7 +89,9 @@ export async function setJupytext(jupytext: Jupytext | undefined, showMessage: b
   if (jupytext && compareVersions(jupytext.jupytextVersion, vMin) < 0) {
     const msgVersion =
       `Jupytext version ${jupytext.jupytextVersion} is not supported. ` +
-      `To use this extension, upgrade to Jupytext ${vMin} or newer.`
+      `To use this extension, upgrade to Jupytext ${vMin} or newer ` +
+      "(via, e.g., 'pip install --upgrade jupytext'). " +
+      `See [Jupytext Sync Logs](command:jupytextSync.showLogs) for details.`
     getJConsole().appendLine(msgVersion)
     vscode.window.showErrorMessage(msgVersion) // don't await
     jupytext = undefined // clear the jupytext info and make function return
@@ -109,13 +111,12 @@ export async function setJupytext(jupytext: Jupytext | undefined, showMessage: b
   }
 
   let msg = `Using Jupytext ${jupytext.jupytextVersion} via '${jupytext.executable}' `
-  if (jupytext.executable !== jupytext.python) {
-    msg += ` (${jupytext.python}).`
-  }
+  // Might not be the same path due to symlinks
+  msg += jupytext.executable !== jupytext.python ? ` (${jupytext.python}).` : "."
   getJConsole().appendLine(msg)
   msg +=
-    " Configurable in the " +
-    "[settings](command:workbench.action.openSettings?%5B%22%40id%3AjupytextSync.pythonExecutable%22%5D)."
+    " To make this configuration persistent edit the " +
+    "[Jupytext Sync Setting](command:workbench.action.openSettings?%5B%22%40id%3AjupytextSync.pythonExecutable%22%5D)."
   if (showMessage) {
     vscode.window.showInformationMessage(msg) // don't await
   }
@@ -296,15 +297,15 @@ export async function queueOperation<T>(
   logPrefix: string = "",
 ): Promise<T> {
   const wrappedOperation = async (): Promise<T> => {
-    const msg = `${logPrefix}Queued '${operationName}' started for ${uri}`
+    const msg = `${logPrefix}Task started: ${operationName} ${uri}`
     getJConsole().appendLine(msg)
     try {
       const result = await operation()
-      const msg = `${logPrefix}Queued '${operationName}' completed for ${uri}`
+      const msg = `${logPrefix}Task completed: ${operationName} ${uri}`
       getJConsole().appendLine(msg)
       return result
     } catch (ex) {
-      const msg = `${logPrefix}Queued '${operationName}' failed for ${uri}: ${ex}`
+      const msg = `${logPrefix}Task failed: ${operationName} ${uri}: ${ex}`
       getJConsole().appendLine(msg)
       throw ex
     }
@@ -322,7 +323,7 @@ export async function queueOperation<T>(
     groupKey,
     newQueue.catch(() => undefined),
   )
-  const msg = `${logPrefix}Queued ${operationName} for ${uri}`
+  const msg = `${logPrefix}Task queued: ${operationName} ${uri}`
   getJConsole().appendLine(msg)
 
   // Return the result of this specific operation
@@ -372,7 +373,6 @@ export function makeLogPrefix(eventName: string): string {
 
 export async function handleDocument(document: vscode.TextDocument | vscode.NotebookDocument, eventName: string) {
   const logPrefix = makeLogPrefix(eventName)
-
   const jupytext = getJupytext()
   if (!jupytext) {
     const msg = `${logPrefix}Jupytext not set`
