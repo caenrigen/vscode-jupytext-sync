@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.4.3 2026-03-01
+
+- Do not modify user settings when auto detecting python executable.
+- Show warning instead of error when auto detecting python executable fails.
+
 ## 1.4.2 2026-02-22
 
 - Change logo to comply with VS Code marketplace requirements.
