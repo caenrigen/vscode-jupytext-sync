@@ -1,6 +1,6 @@
 import * as vscode from "vscode"
 import {config, defaultNotebookDir, EXTENSIONS} from "./constants"
-import {getPythonPaths, runCommand, resolvePythonExecutable} from "./python"
+import {getPythonPaths, runCommand, resolvePythonExecutable, getPythonFromConfig} from "./python"
 import {getJConsole} from "./constants"
 import * as path from "path"
 import * as fs from "fs"
@@ -681,4 +681,56 @@ export async function pickJupytext(): Promise<Jupytext | undefined> {
   getJConsole().appendLine(msg)
   const sorted = sortVersions(await getAvailableVersions())
   return sorted[sorted.length - 1] ?? undefined
+}
+
+export async function locatePythonAndJupytext() {
+  getJConsole().appendLine("Starting Python and Jupytext discovery...")
+  const jupytext = await pickJupytext()
+  if (jupytext) {
+    setJupytext(jupytext, true)
+  } else {
+    const messageSettings =
+      "Failed to automatically locate a python executable that can invoke Jupytext. " +
+      "Click 'Open Settings' and specify the Python Executable. " +
+      "There you will find more detailed instructions and tips. " +
+      "If you still have issues, click 'Show Logs' for more information or " +
+      "create an issue on [GitHub](https://github.com/caenrigen/vscode-jupytext-sync/issues)."
+    const selection = await vscode.window.showWarningMessage(messageSettings, "Open Settings", "Show Logs")
+    if (selection === "Open Settings") {
+      // no need to await
+      vscode.commands.executeCommand("workbench.action.openSettings", "jupytextSync.pythonExecutable")
+    } else if (selection === "Show Logs") {
+      getJConsole().show()
+    }
+  }
+}
+
+export async function validatePythonAndJupytext() {
+  setJupytext(undefined, false) // reset runtime jupytext
+  let pythonPath = getPythonFromConfig()
+  let findAutomatically = false
+  if (pythonPath) {
+    const jupytext = await resolveJupytext(pythonPath)
+    if (jupytext.executable && jupytext.jupytextVersion) {
+      setJupytext(jupytext as Jupytext, false)
+    } else {
+      const msg =
+        `Could not invoke Jupytext with the python executable '${pythonPath}'. ` +
+        'You can attempt to find a suitable python executable by clicking "Find automatically" or ' +
+        '"Open Settings" to specify the Python Executable manually.'
+      console.warn(msg)
+      getJConsole().appendLine(msg)
+      const selection = await vscode.window.showWarningMessage(msg, "Find automatically", "Open Settings")
+      if (selection === "Find automatically") {
+        findAutomatically = true
+      } else if (selection === "Open Settings") {
+        vscode.commands.executeCommand("workbench.action.openSettings", "jupytextSync.pythonExecutable")
+      }
+    }
+  }
+  // First launch (or bad python/jupytext), try to set it automatically
+  if (!pythonPath || findAutomatically) {
+    await locatePythonAndJupytext()
+  }
+  await vscode.commands.executeCommand("setContext", "jupytextSync.supportedExtensions", getSupportedExtensions())
 }
