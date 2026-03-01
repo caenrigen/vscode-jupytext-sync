@@ -172,9 +172,6 @@ async function locatePythonAndJupytext() {
   const jupytext = await pickJupytext()
   if (jupytext) {
     setJupytext(jupytext, true)
-    // Set it globally to avoid the need to select the interpreter again.
-    // Advanced users can always configure the Workspace overrides.
-    await setConfig("jupytextSync.pythonExecutable", jupytext.executable, vscode.ConfigurationTarget.Global)
   } else {
     const messageSettings =
       "Failed to automatically locate a python executable that can invoke Jupytext. " +
@@ -182,7 +179,7 @@ async function locatePythonAndJupytext() {
       "There you will find more detailed instructions and tips. " +
       "If you still have issues, click 'Show Logs' for more information or " +
       "create an issue on [GitHub](https://github.com/caenrigen/vscode-jupytext-sync/issues)."
-    const selection = await vscode.window.showErrorMessage(messageSettings, "Open Settings", "Show Logs")
+    const selection = await vscode.window.showWarningMessage(messageSettings, "Open Settings", "Show Logs")
     if (selection === "Open Settings") {
       // no need to await
       vscode.commands.executeCommand("workbench.action.openSettings", "jupytextSync.pythonExecutable")
