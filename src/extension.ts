@@ -79,10 +79,6 @@ export async function activate(context: vscode.ExtensionContext) {
   // Register custom editor provider for paired notebooks
   context.subscriptions.push(PairedNotebookEditorProvider.register(context))
 
-  // Validate Python and Jupytext on extension activation so that we have an updated
-  // list of supported extensions
-  await validatePythonAndJupytext()
-
   // Initial setup of handlers based on current configuration
   await updateEventHandlers(context)
 }
