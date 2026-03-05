@@ -20,15 +20,32 @@ export function getPythonFromConfig(): string | undefined {
     Potential package to use:
     https://github.com/DominicVonk/vscode-variables
     */
-  // For now keep it simple.
-  if (pythonExecutable.includes("${workspaceFolder}")) {
-    pythonExecutable = pythonExecutable.replace(
-      "${workspaceFolder}",
+  pythonExecutable = expandVariables(pythonExecutable)
+  console.debug("pythonExecutable", pythonExecutable)
+  return pythonExecutable
+}
+
+function expandVariables(value: string): string {
+  // ${workspaceFolder}
+  if (value.includes("${workspaceFolder}")) {
+    value = value.replace(
+      /\$\{workspaceFolder\}/g,
       vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? "",
     )
-    console.debug("pythonExecutable", pythonExecutable)
   }
-  return pythonExecutable
+
+  // ${userHome}
+  const userHome = process.env["HOME"] || process.env["USERPROFILE"] || ""
+  if (value.includes("${userHome}")) {
+    value = value.replace(/\$\{userHome\}/g, userHome)
+  }
+
+  // ${env:VAR_NAME}
+  value = value.replace(/\$\{env:([^}]+)\}/g, (_match, varName) => {
+    return process.env[varName] ?? ""
+  })
+
+  return value
 }
 
 export async function resolvePythonExecutable(command: string[]): Promise<string | undefined> {
