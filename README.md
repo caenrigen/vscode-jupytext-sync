@@ -83,16 +83,18 @@ This extension solves several common annoyances and provides handy features for 
 You can configure the extension's behavior via VSCode settings (search for `jupytextSync` in the Settings UI or edit your `settings.json`):
 
 - **`jupytextSync.pythonExecutable`**:
-
   - **Description**: The path to the Python executable used to invoke `jupytext`.
   - **Details**: Jupytext Sync requires a Python executable with the `jupytext` package installed.
-    - _Automatic discovery_: If not specified, the extension attempts to find a suitable Python executable. If the Microsoft Python extension is installed, its selected interpreter and other known environments are checked. Otherwise, it looks for `python` and `python3` in your system PATH. The one providing the highest `jupytext` version is preferred.
-    - _Manual override_: Specify an absolute path or a command (e.g., `python3`). If using a command, ensure your VS Code instance inherits the correct PATH (launching from an activated terminal might be necessary for virtual environments).
+    - _Automatic discovery_: If not specified, the extension attempts to find a suitable Python executable. If the Microsoft Python extension is installed, its selected interpreter and other known environments are checked. Otherwise, it looks for `python` and `python3` in your system `$PATH`. The one providing the highest `jupytext` version is preferred. If auto-detection fails, a warning message is displayed prompting you to manually configure this setting.
+    - _Manual override_: Specify an absolute path or a command (e.g., `python3`). If using a command, ensure your VS Code instance inherits the correct `$PATH` (launching from an activated terminal might be necessary for virtual environments).
+    - _Variable expansion_: The setting supports variable expansion for portability:
+      - `${userHome}`: Expands to the user's home directory
+      - `${env:VAR_NAME}`: Expands to the value of environment variable `VAR_NAME`
+      - `${workspaceFolder}`: Expands to the workspace folder path
   - **Tip**: Use the "**Jupytext: Show Jupytext Sync Logs**" or "**Jupytext: Locate Python and Jupytext**" commands to verify which Python executable is being used.
   - **Default**: `""` (empty string, for automatic discovery)
 
 - **`jupytextSync.deleteOnNotebookClose`**:
-
   - **Description**: Control whether to delete the `.ipynb` notebook file when closing a paired notebook editor.
   - **Options**:
     - `"never"`: Never delete the notebook file when closing.
@@ -103,7 +105,6 @@ You can configure the extension's behavior via VSCode settings (search for `jupy
   - **Default**: `"never"`
 
 - **`jupytextSync.syncDocuments`**:
-
   - **Description**: Controls on which events to attempt to `jupytext --sync` previously paired documents. This applies even if pairing was done externally.
   - **Properties**:
     - `onNotebookDocumentOpen` (boolean): Sync when opening a notebook document.
@@ -115,14 +116,12 @@ You can configure the extension's behavior via VSCode settings (search for `jupy
   - **Default**: See individual property defaults above.
 
 - **`jupytextSync.askFormats`**:
-
   - **Description**: Controls whether to ask for pairing file formats before executing commands that may require pairing. If `false`, `jupytextSync.defaultFormats` are used.
   - **Properties**:
     - `onOpenPairedNotebook` (boolean): Ask for formats before opening a text document as a paired notebook. (Default: `false`)
     - `onPairDocuments` (boolean): Ask for formats before pairing documents. (Default: `true`)
 
 - **`jupytextSync.defaultFormats`**:
-
   - **Description**: Define default Jupytext pairing formats (e.g., `ipynb,py:percent`) used as suggestions or defaults.
   - **Syntax**: Uses Jupytext's `--set-formats` string.
     - `${ext}` can be used as a placeholder for the file extension (without the leading dot).
@@ -132,13 +131,11 @@ You can configure the extension's behavior via VSCode settings (search for `jupy
   - **Example Default Entry**: `"default": "ipynb,${ext}:percent"`
 
 - **`jupytextSync.setFormatsArgs`**:
-
   - **Description**: Customization for the command-line arguments of `jupytext --set-formats` invocation. The order is preserved.
   - **Examples**: `["--set-formats"]`, `["--set-formats", "--some-flag"]`
   - **Default**: `["--set-formats"]`
 
 - **`jupytextSync.syncArgs`**:
-
   - **Description**: Customization for the command-line arguments of `jupytext --sync` invocation. The order is preserved.
   - **Example**: `["--sync", "--use-source-timestamp"]`
   - **Default**: `["--sync"]`
@@ -177,8 +174,8 @@ Alternatively, you can manually add the following to your VS Code settings to au
 {
   "workbench.editorAssociations": {
     "*.py": "jupytextSync.pairedNotebookEditor",
-    "*.md": "jupytextSync.pairedNotebookEditor"
-  }
+    "*.md": "jupytextSync.pairedNotebookEditor",
+  },
 }
 ```
 
