@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.4.4 2026-03-02
+
+- Support ${userHome} and ${env:VAR_NAME} in `jupytextSync.pythonExecutable` setting by [@alxhslm](https://github.com/alxhslm).
+
 ## 1.4.3 2026-03-01
 
 - Do not modify user settings when auto detecting python executable.
