@@ -1,18 +1,35 @@
+# Files to be ignored when packaging the extension
+
 .vscode/**
 .vscode-test/**
-src/**
+**/.vscode-test.*
+
 .gitignore
+.prettierrc
+
 .yarnrc
+yarn.lock
+
+# Typescript and eslint
 **/tsconfig.json
 **/eslint.config.mjs
 **/*.map
 **/*.ts
-**/.vscode-test.*
-.prettierrc
-yarn.lock
-screenshot.jpg
+
+# Python and Jupyter Notebooks
 .jupytext-sync-ipynb/
 .ipynb_checkpoints/
-.DS_Store
 *.py
 *.ipynb
+
+# macOS metadata
+.DS_Store
+
+src/**
+
+# Not needed, in the README we link to the raw files on GitHub.
+# Make the extension smaller.
+assets/**
+
+# Developer notes
+DEVELOPER.md
