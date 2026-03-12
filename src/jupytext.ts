@@ -162,10 +162,31 @@ const injectTimestamp = (module: string, prefix: string = "") =>
   `sys.stderr.write=lambda s,ow=ow2: ow(''.join(f'${prefix}{time.time():.6f} {l}' for l in s.splitlines(True))); ` +
   `runpy.run_module('${module}', run_name='__main__')`
 
+const latestSyncTaskVersions = new Map<string, number>()
+
+function getSyncTaskKey(uri: vscode.Uri): string {
+  return uri.toString()
+}
+
+function createSyncTaskVersion(uri: vscode.Uri): number {
+  const taskKey = getSyncTaskKey(uri)
+  const taskVersion = (latestSyncTaskVersions.get(taskKey) || 0) + 1
+  latestSyncTaskVersions.set(taskKey, taskVersion)
+  return taskVersion
+}
+
+function isCurrentSyncTask(uri: vscode.Uri, taskVersion?: number): boolean {
+  if (taskVersion === undefined) {
+    return true
+  }
+  return latestSyncTaskVersions.get(getSyncTaskKey(uri)) === taskVersion
+}
+
 export async function runJupytext(
   cmdArgs: string[],
   showError: boolean = true,
   logPrefix: string = "",
+  shouldShowError?: () => boolean,
 ): Promise<string | undefined> {
   try {
     const jupytext = getJupytext()
@@ -183,17 +204,20 @@ export async function runJupytext(
     getJConsole().appendLine(output)
     return output
   } catch (ex) {
+    if (!(showError && (shouldShowError ? shouldShowError() : true))) {
+      getJConsole().appendLine(`${logPrefix}Suppressed Jupytext error for obsolete task`)
+      return undefined
+    }
+
     const msg = `Failed to run Jupytext: ${ex}`
     getJConsole().appendLine(`${logPrefix}${msg}`)
-    if (showError) {
-      const selection = await vscode.window.showErrorMessage(
-        `Failed to run Jupytext. See output for details.`,
-        "Show Output",
-      )
-      if (selection === "Show Output") {
-        getJConsole().show()
-      }
-    }
+    void vscode.window.showErrorMessage(`Failed to run Jupytext. See output for details.`, "Show Output").then(
+      (selection) => {
+        if (selection === "Show Output") {
+          getJConsole().show()
+        }
+      },
+    )
     return undefined
   }
 }
@@ -335,10 +359,13 @@ async function runJupytextSyncInternal(
   uri: vscode.Uri,
   showError: boolean = true,
   logPrefix: string = "",
+  taskVersion?: number,
 ): Promise<string | undefined> {
   const normalizedPath = path.resolve(uri.fsPath)
   getJConsole().appendLine(`${logPrefix}Running jupytext sync for ${normalizedPath}`)
-  const result = await runJupytext([...getSyncArgs(), normalizedPath], showError, logPrefix)
+  const result = await runJupytext([...getSyncArgs(), normalizedPath], showError, logPrefix, () =>
+    isCurrentSyncTask(uri, taskVersion),
+  )
   getJConsole().appendLine(`${logPrefix}Completed jupytext sync for ${normalizedPath}`)
   return result
 }
@@ -347,8 +374,9 @@ export async function runJupytextSync(
   uri: vscode.Uri,
   showError: boolean = true,
   logPrefix: string = "",
+  taskVersion?: number,
 ): Promise<string | undefined> {
-  return queueOperation(uri, () => runJupytextSyncInternal(uri, showError, logPrefix), "Sync", logPrefix)
+  return queueOperation(uri, () => runJupytextSyncInternal(uri, showError, logPrefix, taskVersion), "Sync", logPrefix)
 }
 
 // Internal implementation - does the actual setFormats without queuing
@@ -380,7 +408,8 @@ export async function handleDocument(document: vscode.TextDocument | vscode.Note
     return
   }
   if (isSupportedFile(document.uri) && document.uri.scheme === "file") {
-    return await runJupytextSync(document.uri, true, logPrefix)
+    const taskVersion = createSyncTaskVersion(document.uri)
+    return await runJupytextSync(document.uri, true, logPrefix, taskVersion)
   }
 }
 
