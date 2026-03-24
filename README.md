@@ -28,7 +28,9 @@ The extension activates when VS Code has finished starting up (`onStartupFinishe
 
 - **Python**: You need a Python installation.
 - **Jupytext**: The `jupytext` Python package must be installed in the Python environment used by the extension.
-- **VS Code Microsoft Python Extension (Recommended)**: For the best experience with automatic Python environment detection, it is recommended to have the Microsoft Python extension installed ([open in VSCode](vscode:extension/ms-python.python) / [open on marketplace](https://marketplace.visualstudio.com/items?itemName=ms-python.python)).
+- **VS Code Python Extension (Recommended)**: For the best experience with automatic Python environment detection, it is recommended to have one of the following Microsoft extensions installed:
+  - [Python Environments](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-python-envs) (`ms-python.vscode-python-envs`) — the new official extension for managing Python environments ([open in VSCode](vscode:extension/ms-python.vscode-python-envs))
+  - [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) (`ms-python.python`) — the classic Microsoft Python extension ([open in VSCode](vscode:extension/ms-python.python))
 
 ## Features
 
@@ -54,7 +56,7 @@ This extension solves several common annoyances and provides handy features for 
   - Toggle cells to raw format and back to default code. Keyboard shortcuts available.
 - **Compact Notebook Layout**: A command to apply a suggested VSCode settings for a more compact notebook layout, similar to traditional Jupyter interfaces.
 - **Python Interpreter Flexibility**:
-  - Attempts are made to automatically discover Python executables that are able to invoke Jupytext. If the Microsoft Python extension is installed ([open in VSCode](vscode:extension/ms-python.python) / [open on marketplace](https://marketplace.visualstudio.com/items?itemName=ms-python.python)), its selected interpreter and other discovered environments (e.g., `venv`, `conda`) are considered.
+  - Attempts are made to automatically discover Python executables that are able to invoke Jupytext. The following sources are tried in order: the [Python Environments](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-python-envs) extension (if installed), the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) extension (if installed), and `python`/`python3` on your `$PATH`. The active environment and all discovered environments (e.g., `venv`, `conda`) are considered. Jupytext is re-validated automatically when the active Python environment changes.
   - Allows you to configure a custom Python executable path for `jupytext` if needed (via the `jupytextSync.pythonExecutable` setting).
   - You can use the "**Jupytext: Locate Python and Jupytext**" command or check the extension logs ("**Jupytext: Show Jupytext Sync Logs**" command) to see which Python environment is being used.
 

@@ -3,6 +3,7 @@ import {spawn} from "child_process"
 import * as vscode from "vscode"
 import {PythonExtension} from "@vscode/python-extension"
 import {getJConsole, config} from "./constants"
+import {getNewPythonEnvsApi} from "./pythonEnvironmentsApi"
 
 export function getPythonFromConfig(): string | undefined {
   let pythonExecutable = config().get<string>("pythonExecutable") ?? undefined
@@ -162,9 +163,66 @@ function getSystemPythonPaths() {
   return ["python", "python3"]
 }
 
+async function getPythonPathsViaNewPythonEnvs(): Promise<string[]> {
+  const msgPrefix = "Skipping Python discovery via ms-python.vscode-python-envs extension"
+  const api = await getNewPythonEnvsApi()
+  if (!api) {
+    getJConsole().appendLine(`${msgPrefix}: not installed.`)
+    return []
+  }
+  try {
+    const paths: string[] = []
+    const addEnvPath = (env: {execInfo?: {run?: {executable?: string}}; error?: string}) => {
+      const exe = env.execInfo?.run?.executable
+      if (exe && !env.error && !paths.includes(exe)) {
+        paths.push(exe)
+      }
+    }
+    // Prefer the selected environment for the current workspace folder (highest signal)
+    const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri
+    if (workspaceUri) {
+      const active = await api.getEnvironment(workspaceUri)
+      if (active) {
+        getJConsole().appendLine(
+          `ms-python.vscode-python-envs: workspace active env: ${active.execInfo?.run?.executable ?? "(no executable)"}${active.error ? ` [broken: ${active.error}]` : ""}`,
+        )
+        addEnvPath(active)
+      } else {
+        getJConsole().appendLine("ms-python.vscode-python-envs: no active env set for workspace.")
+      }
+    }
+    // Fall back to the globally-selected environment (useful with no workspace or single-file mode)
+    const globalActive = await api.getEnvironment(undefined)
+    if (globalActive) {
+      getJConsole().appendLine(
+        `ms-python.vscode-python-envs: global active env: ${globalActive.execInfo?.run?.executable ?? "(no executable)"}${globalActive.error ? ` [broken: ${globalActive.error}]` : ""}`,
+      )
+      addEnvPath(globalActive)
+    }
+    // Then include all other discovered environments, skipping broken ones
+    const all = await api.getEnvironments("all")
+    getJConsole().appendLine(
+      `ms-python.vscode-python-envs: ${all.length} environment(s) discovered total, ${all.filter((e) => e.error).length} broken (skipped).`,
+    )
+    for (const env of all) {
+      addEnvPath(env)
+    }
+    getJConsole().appendLine(
+      `ms-python.vscode-python-envs: resolved ${paths.length} candidate path(s): ${paths.join(", ") || "(none)"}`,
+    )
+    return paths
+  } catch (ex) {
+    const msg = `${msgPrefix}: failed: ${ex}`
+    console.error(msg, ex)
+    getJConsole().appendLine(msg)
+    return []
+  }
+}
+
 export async function getPythonPaths() {
   const pythonPath = config("python").get<string>("defaultInterpreterPath")
   const pythonPaths = new Set([
+    ...(await getPythonPathsViaNewPythonEnvs()),
     ...(await getPythonPathsViaMsPython()),
     ...getSystemPythonPaths(),
     ...(pythonPath ? [pythonPath] : []),
