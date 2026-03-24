@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.4.5 2026-03-24
+
+- Support automatic Python discovery via the [Python Environments](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-python-envs) extension (`ms-python.vscode-python-envs`), the new official Microsoft extension for managing Python environments. It is tried before `ms-python.python` and re-validates Jupytext when the active environment changes.
+
 ## 1.4.4 2026-03-02
 
 - Support ${userHome} and ${env:VAR_NAME} in `jupytextSync.pythonExecutable` setting by [@alxhslm](https://github.com/alxhslm).

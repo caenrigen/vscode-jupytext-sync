@@ -18,6 +18,7 @@ import {
   locatePythonAndJupytext,
 } from "./jupytext"
 import {PairedNotebookEditorProvider} from "./pairedNotebookEditor"
+import {getNewPythonEnvsApi} from "./pythonEnvironmentsApi"
 
 // Store disposables for event handlers so we can manage them
 let disposables: vscode.Disposable[] = []
@@ -82,6 +83,9 @@ export async function activate(context: vscode.ExtensionContext) {
   // Validate Python and Jupytext on extension activation so that we have an updated
   // list of supported extensions
   await validatePythonAndJupytext()
+
+  // Subscribe to Python environment changes from ms-python.vscode-python-envs
+  subscribeToNewPythonEnvsChanges(context)
 
   // Initial setup of handlers based on current configuration
   await updateEventHandlers(context)
@@ -359,6 +363,38 @@ async function setSuggestedCompactNotebookLayout() {
     await setConfig(key, value, vscode.ConfigurationTarget.Global)
   }
   vscode.window.showInformationMessage("Suggested compact notebook layout settings applied.")
+}
+
+async function subscribeToNewPythonEnvsChanges(context: vscode.ExtensionContext) {
+  const api = await getNewPythonEnvsApi()
+  if (!api) {
+    return
+  }
+  try {
+    // Single shared timer: both events trigger the same action, so one debounce covers both.
+    // Delay trade-off: short = snappier feedback; long = fewer redundant re-validations during
+    // burst discovery at startup. 500 ms is below the threshold of noticeable UI lag.
+    const DEBOUNCE_MS = 500
+    let debounceTimer: ReturnType<typeof setTimeout> | undefined
+    const scheduleRevalidate = (reason: string) => {
+      clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(async () => {
+        getJConsole().appendLine(`${reason}, re-validating...`)
+        await validatePythonAndJupytext()
+      }, DEBOUNCE_MS)
+    }
+
+    context.subscriptions.push(
+      api.onDidChangeEnvironment(() =>
+        scheduleRevalidate("Python environment changed (ms-python.vscode-python-envs)"),
+      ),
+      api.onDidChangeEnvironments(() =>
+        scheduleRevalidate("Python environments list changed (ms-python.vscode-python-envs)"),
+      ),
+    )
+  } catch (ex) {
+    getJConsole().appendLine(`Failed to subscribe to Python environment changes: ${ex}`)
+  }
 }
 
 export function deactivate() {
