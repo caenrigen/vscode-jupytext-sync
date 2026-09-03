@@ -53,18 +53,6 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "customEditors": [
-      {
-        "viewType": "jupytextSync.pairedNotebookEditor",
-        "displayName": "Jupytext Paired Notebook (Beta)",
-        "selector": [
-          {
-            "filenamePattern": "{*.R,*.Rmd,*.clj,*.coco,*.cpp,*.cs,*.do,*.fs,*.fsx,*.go,*.gp,*.groovy,*.hs,*.java,*.jl,*.js,*.lgt,*.logtalk,*.lua,*.m,*.mac,*.markdown,*.md,*.ml,*.mnb,*.myst,*.mystnb,*.pro,*.ps1,*.py,*.q,*.qmd,*.r,*.resource,*.robot,*.rs,*.sage,*.sas,*.scala,*.scm,*.sh,*.sos,*.ss,*.tcl,*.ts,*.wolfram,*.xsh}"
-          }
-        ],
-        "priority": "option"
-      }
-    ],
     "configuration": {
       "title": "Jupytext Sync",
       "properties": {
@@ -87,7 +75,7 @@
             "Never delete the notebook file when closing",
             "Always ask for confirmation before deleting",
             "Always delete if the notebook has paired formats",
-            "Only delete if the notebook was auto-created by this extension via 'Open paired Notebook' or by opening a paired text file with the custom editor"
+            "Only delete if the notebook was auto-created by this extension via 'Open paired Notebook'"
           ],
           "markdownDescription": "Control whether to delete the `.ipynb` notebook file when closing a paired notebook editor.\n\nDeleted files are moved to the system trash/recycle bin and can be recovered.\n\nThis feature is designed for workflows where the `.ipynb` file is generated from source text files (e.g., `.py`, `.md`) and the text file is the primary source of truth.\n\nHover over each option for a detailed description.",
           "order": 1

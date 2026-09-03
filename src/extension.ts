@@ -17,7 +17,6 @@ import {
   validatePythonAndJupytext,
   locatePythonAndJupytext,
 } from "./jupytext"
-import {PairedNotebookEditorProvider} from "./pairedNotebookEditor"
 
 // Store disposables for event handlers so we can manage them
 let disposables: vscode.Disposable[] = []
@@ -75,9 +74,6 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand("jupytextSync.locatePythonAndJupytext", locatePythonAndJupytext),
   )
-
-  // Register custom editor provider for paired notebooks
-  context.subscriptions.push(PairedNotebookEditorProvider.register(context))
 
   // Validate Python and Jupytext on extension activation so that we have an updated
   // list of supported extensions

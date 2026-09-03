@@ -37,9 +37,7 @@ This extension solves several common annoyances and provides handy features for 
 - **Automatic Synchronization**:
   - Automatically syncs paired files (`.ipynb` and text-based formats like `.py`, `.md`) when you open, save, or close them. This ensures that your notebook and its text representation are always in sync.
   - Configuration options allow you to customize which events trigger a sync (on open, on save, on close for both text documents and notebook documents). See the `jupytextSync.syncDocuments` setting for details.
-- **Seamless Notebook-First Workflow**:
-  - **Auto-open notebooks**: When you open a paired text file (e.g., `.py`, `.md`), the extension can automatically open the paired `.ipynb` notebook instead, providing a seamless editing experience. See the **Editor Associations** section below for configuration details.
-  - **Auto-cleanup**: Optionally delete the `.ipynb` file when closing the notebook editor, keeping your workspace clean when the text file is your primary source of truth. Deleted files are moved to trash and can be recovered. This feature is opt-in. See the `jupytextSync.deleteOnNotebookClose` setting for details.
+- **Auto-cleanup**: Optionally delete an `.ipynb` file created by the "**Open paired Notebook via Jupytext**" command when closing the notebook editor. Deleted files are moved to trash and can be recovered. This feature is opt-in. See the `jupytextSync.deleteOnNotebookClose` setting for details.
 - **Open Text Files as Notebooks**:
   - Open Jupytext-compatible text files (e.g., `.py`, `.md` with Jupytext metadata) as notebooks using the "**Open paired Notebook via Jupytext**" command. A notebook file will be created and all your edits in it will be synced to the text file(s).
 - **Persistent Cell Outputs**: All files are saved to disk, meaning cell outputs are not lost when reopening a notebook, providing a more consistent experience.
@@ -65,7 +63,7 @@ This extension solves several common annoyances and provides handy features for 
     - Use the "**Pair via Jupytext**" command (accessible from the Command Palette, context menus, or toolbar icons).
     - You'll be prompted to choose the Jupytext formats (e.g., `ipynb,py:percent`) unless disabled via `jupytextSync.askFormats.onPairDocuments`. The default suggestion is configurable per file extension using `jupytextSync.defaultFormats`.
 2.  **Work in the Notebook**:
-    - When you open your paired text file (e.g., `.py`, `.md`), the extension can automatically open the `.ipynb` notebook for you (see the **Editor Associations** section below to configure this behavior).
+    - Use the "**Open paired Notebook via Jupytext**" command from a paired text file (e.g., `.py`, `.md`) to open its `.ipynb` notebook.
     - The extension will automatically keep the paired files in sync upon saving (or other configured events via `jupytextSync.syncDocuments`).
     - When you close the notebook, you can optionally have the `.ipynb` file automatically deleted (configurable via `jupytextSync.deleteOnNotebookClose`, which defaults to "never"), keeping your workspace clean while preserving your text file as the source of truth.
 3.  **Version Control**:
@@ -100,7 +98,7 @@ You can configure the extension's behavior via VSCode settings (search for `jupy
     - `"never"`: Never delete the notebook file when closing.
     - `"ask"`: Always ask for confirmation before deleting.
     - `"yes"`: Always delete if the notebook has paired formats.
-    - `"if auto created"`: Only delete if the notebook was auto-created by this extension via "Open paired Notebook" or by opening a paired text file with the custom editor.
+    - `"if auto created"`: Only delete if the notebook was auto-created by this extension via "Open paired Notebook".
   - **Details**: Deleted files are moved to the system trash/recycle bin and can be recovered. This feature is designed for workflows where the `.ipynb` file is generated from source text files (e.g., `.py`, `.md`) and the text file is the primary source of truth.
   - **Default**: `"never"`
 
@@ -150,45 +148,6 @@ You can configure the extension's behavior via VSCode settings (search for `jupy
     - `notebookToolbar`: "Pair via Jupytext" button in Notebook toolbar.
     - `notebookToolbarInsertRaw`: "Insert Raw Cell" button in Notebook toolbar.
     - `notebookToolbarToRaw`: "Toggle Raw/Code Cell" button in Notebook toolbar.
-
-### Editor Associations (Auto-Open Paired Notebook)
-
-The extension registers a custom editor (`jupytextSync.pairedNotebookEditor`) that allows you to automatically open paired text files as notebooks. You can control this behavior using VS Code's `workbench.editorAssociations` setting.
-
-#### Enabling Auto-Open for Specific File Extensions
-
-**Via UI:**
-
-1. Right-click a file (e.g., `.py` or `.md`) in the Explorer
-2. Select **Open With...**
-3. At the bottom of the available editors list, click **Configure default editor for '\*.py'...** (or your file's extension)
-4. Choose **Jupytext Paired Notebook (Beta)** from the list
-
-This will automatically configure the editor association for that file extension.
-
-**Via settings.json:**
-
-Alternatively, you can manually add the following to your VS Code settings to automatically open, e.g., `.py` and `.md` files as paired notebooks:
-
-```jsonc
-{
-  "workbench.editorAssociations": {
-    "*.py": "jupytextSync.pairedNotebookEditor",
-    "*.md": "jupytextSync.pairedNotebookEditor",
-  },
-}
-```
-
-This tells VS Code to use the Jupytext Sync custom editor whenever you open a `.py` file. When the custom editor detects that the file is paired with a notebook (via Jupytext metadata), it will:
-
-1. Sync the paired files
-2. Open the paired `.ipynb` notebook instead
-
-**Note**: If the text file is not paired with a notebook, or if Jupytext is not available, the file will automatically fall back to opening in the default text editor.
-
-#### Bypassing the Custom Editor
-
-Even with `editorAssociations` configured, you can always open a file with the default text editor by right-clicking the file in the Explorer → **Open With...** → choosing the default text editor.
 
 ### Jupytext Behavior
 
