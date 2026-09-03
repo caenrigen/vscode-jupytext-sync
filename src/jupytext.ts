@@ -18,6 +18,8 @@ export type Jupytext = {
 }
 
 let jupytextInfo: Jupytext | undefined = undefined
+let discoveryPromise: Promise<Jupytext | undefined> | undefined = undefined
+let discoveryAttempted = false
 let extensionContext: vscode.ExtensionContext | undefined = undefined
 
 const AUTO_CREATED_NOTEBOOKS_KEY = "jupytextSync.autoCreatedNotebooks"
@@ -69,7 +71,11 @@ export function getJupytext(): Jupytext | undefined {
   return jupytextInfo
 }
 
-export function setJupytext(jupytext: Jupytext | undefined, showMessage: boolean = false): void {
+export function setJupytext(
+  jupytext: Jupytext | undefined,
+  showMessage: boolean = false,
+  showVersionError: boolean = true,
+): void {
   // Prior to v1.17.3 there were several issues and bugs that did not play well with
   // this extension. Made it a requirement to simplify code.
   const vMin = "1.17.3"
@@ -80,7 +86,9 @@ export function setJupytext(jupytext: Jupytext | undefined, showMessage: boolean
       "(via, e.g., 'pip install --upgrade jupytext'). " +
       `See [Jupytext Sync Logs](command:jupytextSync.showLogs) for details.`
     getJConsole().appendLine(msgVersion)
-    vscode.window.showErrorMessage(msgVersion) // don't await
+    if (showVersionError) {
+      vscode.window.showErrorMessage(msgVersion) // don't await
+    }
     jupytext = undefined // clear the jupytext info and make function return
   }
 
@@ -335,15 +343,16 @@ export function makeLogPrefix(eventName: string): string {
 
 export async function handleDocument(document: vscode.TextDocument | vscode.NotebookDocument, eventName: string) {
   const logPrefix = makeLogPrefix(eventName)
-  const jupytext = getJupytext()
+  if (!isSupportedFile(document.uri) || document.uri.scheme !== "file") {
+    return
+  }
+  const jupytext = await ensurePythonAndJupytext(false)
   if (!jupytext) {
     const msg = `${logPrefix}Jupytext not set`
     getJConsole().appendLine(msg)
     return
   }
-  if (isSupportedFile(document.uri) && document.uri.scheme === "file") {
-    return await runJupytextSync(document.uri, true, logPrefix)
-  }
+  return await runJupytextSync(document.uri, true, logPrefix)
 }
 
 export async function getFileUri(fileUri?: vscode.Uri) {
@@ -449,6 +458,9 @@ export async function setFormats(
 // Use this in package.json to pair documents, otherwise VSCode injects more arguments
 // into setFormats' arguments.
 export async function pair(fileUri?: vscode.Uri) {
+  if (!(await ensurePythonAndJupytext(true))) {
+    return
+  }
   const logPrefix = makeLogPrefix("Pair")
   return await setFormats(fileUri, config().get<boolean>("askFormats.onPairDocuments", true), false, logPrefix)
 }
@@ -498,6 +510,9 @@ function getNotebookUriFromPairedPaths(pairedPaths: PairedPathAndFormat[]): vsco
 
 // Wrapper to deal with the potential arguments that VS Code might be injecting.
 export async function openPairedNotebookCommand(fileUri?: vscode.Uri) {
+  if (!(await ensurePythonAndJupytext(true))) {
+    return
+  }
   return await openPairedNotebookWithProgress(fileUri, undefined, makeLogPrefix("openPairedNotebookCommand"))
 }
 
@@ -648,6 +663,7 @@ export async function pickJupytext(): Promise<Jupytext | undefined> {
 export async function locatePythonAndJupytext() {
   getJConsole().appendLine("Starting Python and Jupytext discovery...")
   const jupytext = await pickJupytext()
+  discoveryAttempted = true
   if (jupytext) {
     setJupytext(jupytext, true)
   } else {
@@ -667,14 +683,15 @@ export async function locatePythonAndJupytext() {
   }
 }
 
-export async function validatePythonAndJupytext() {
+export async function validatePythonAndJupytext(showMessages: boolean = true): Promise<Jupytext | undefined> {
+  discoveryAttempted = true
   setJupytext(undefined, false) // reset runtime jupytext
   let pythonPath = getPythonFromConfig()
   let findAutomatically = false
   if (pythonPath) {
     const jupytext = await resolveJupytext(pythonPath)
     if (jupytext.executable && jupytext.jupytextVersion) {
-      setJupytext(jupytext as Jupytext, false)
+      setJupytext(jupytext as Jupytext, false, showMessages)
     } else {
       const msg =
         `Could not invoke Jupytext with the python executable '${pythonPath}'. ` +
@@ -682,7 +699,9 @@ export async function validatePythonAndJupytext() {
         '"Open Settings" to specify the Python Executable manually.'
       console.warn(msg)
       getJConsole().appendLine(msg)
-      const selection = await vscode.window.showWarningMessage(msg, "Find automatically", "Open Settings")
+      const selection = showMessages
+        ? await vscode.window.showWarningMessage(msg, "Find automatically", "Open Settings")
+        : undefined
       if (selection === "Find automatically") {
         findAutomatically = true
       } else if (selection === "Open Settings") {
@@ -692,6 +711,34 @@ export async function validatePythonAndJupytext() {
   }
   // First launch (or bad python/jupytext), try to set it automatically
   if (!pythonPath || findAutomatically) {
-    await locatePythonAndJupytext()
+    const jupytext = await pickJupytext()
+    if (jupytext) {
+      setJupytext(jupytext, false, showMessages)
+    }
   }
+  return getJupytext()
+}
+
+export async function ensurePythonAndJupytext(showFailureMessage: boolean): Promise<Jupytext | undefined> {
+  if (jupytextInfo) {
+    return jupytextInfo
+  }
+  if (!discoveryAttempted && !discoveryPromise) {
+    discoveryPromise = validatePythonAndJupytext(false).finally(() => {
+      discoveryPromise = undefined
+    })
+  }
+  const result = await discoveryPromise
+  if (!result && showFailureMessage) {
+    const message =
+      "Failed to locate a Python executable that can invoke Jupytext. " +
+      "Configure the Python Executable setting or inspect the logs for details."
+    const selection = await vscode.window.showWarningMessage(message, "Open Settings", "Show Logs")
+    if (selection === "Open Settings") {
+      vscode.commands.executeCommand("workbench.action.openSettings", "jupytextSync.pythonExecutable")
+    } else if (selection === "Show Logs") {
+      getJConsole().show()
+    }
+  }
+  return result
 }

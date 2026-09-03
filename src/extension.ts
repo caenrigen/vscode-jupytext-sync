@@ -15,6 +15,7 @@ import {
   readPairedPathsAndFormatsInternal,
   makeLogPrefix,
   validatePythonAndJupytext,
+  ensurePythonAndJupytext,
   locatePythonAndJupytext,
   getSupportedExtensions,
 } from "./jupytext"
@@ -83,8 +84,12 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("jupytextSync.locatePythonAndJupytext", locatePythonAndJupytext),
   )
 
-  // Validate Python and Jupytext on extension activation.
-  await validatePythonAndJupytext()
+  // Menu visibility depends only on configuration, not on Python/Jupytext discovery.
+  await vscode.commands.executeCommand(
+    "setContext",
+    "jupytextSync.supportedExtensions",
+    getSupportedExtensions(),
+  )
 
   // Initial setup of handlers based on current configuration
   await updateEventHandlers(context)
@@ -267,6 +272,10 @@ async function handleNotebookClose(document: vscode.NotebookDocument) {
 
   if (!(await getFileUri(uri))) {
     return // untitled notebook
+  }
+
+  if ((deleteOnClose === "yes" || deleteOnClose === "ask") && !(await ensurePythonAndJupytext(false))) {
+    return
   }
 
   // Queue this entire operation to avoid race conditions with sync/setFormats operations

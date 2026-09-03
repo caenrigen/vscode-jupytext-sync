@@ -22,7 +22,7 @@ The extension is available on both [Microsoft VSCode Marketplace](https://market
 
 Alternatively, you can install it directly by downloading the `.vsix` file from the release page on the GitHub and drag-and-drop it in your VSCode-based IDE. This has the downside that you will not be notified about available updates.
 
-The extension activates when VS Code has finished starting up (`onStartupFinished`), so it should be available shortly after launch.
+The extension activates when VS Code has finished starting up (`onStartupFinished`), registering its commands and editor integration immediately. Python and Jupytext discovery is deferred until the first Jupytext command or relevant automatic sync event.
 
 ## Requirements
 
@@ -83,7 +83,7 @@ You can configure the extension's behavior via VSCode settings (search for `jupy
 - **`jupytextSync.pythonExecutable`**:
   - **Description**: The path to the Python executable used to invoke `jupytext`.
   - **Details**: Jupytext Sync requires a Python executable with the `jupytext` package installed.
-    - _Automatic discovery_: If not specified, the extension attempts to find a suitable Python executable. If the Microsoft Python extension is installed, its selected interpreter and other known environments are checked. Otherwise, it looks for `python` and `python3` in your system `$PATH`. The one providing the highest `jupytext` version is preferred. If auto-detection fails, a warning message is displayed prompting you to manually configure this setting.
+    - _Automatic discovery_: If not specified, the extension attempts to find a suitable Python executable on first use. If the Microsoft Python extension is installed, its selected interpreter and other known environments are checked. Otherwise, it looks for `python` and `python3` in your system `$PATH`. The one providing the highest `jupytext` version is preferred. Command-triggered failures display an actionable warning; failures from automatic editor events are logged without a notification.
     - _Manual override_: Specify an absolute path or a command (e.g., `python3`). If using a command, ensure your VS Code instance inherits the correct `$PATH` (launching from an activated terminal might be necessary for virtual environments).
     - _Variable expansion_: The setting supports variable expansion for portability:
       - `${userHome}`: Expands to the user's home directory
