@@ -75,8 +75,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("jupytextSync.locatePythonAndJupytext", locatePythonAndJupytext),
   )
 
-  // Validate Python and Jupytext on extension activation so that we have an updated
-  // list of supported extensions
+  // Validate Python and Jupytext on extension activation.
   await validatePythonAndJupytext()
 
   // Initial setup of handlers based on current configuration

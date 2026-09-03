@@ -46,7 +46,7 @@ This extension solves several common annoyances and provides handy features for 
   - File Explorer context menu (right-click on a file)
   - Editor context menu (right-click inside the editor or on the editor tab)
   - Icons in the editor and notebook toolbars.
-- **Broad File Support**: Supports all file extensions and formats recognized by your `jupytext` installation. The extension dynamically fetches the supported formats from `jupytext`. The `jupytextSync.defaultFormats` setting allows you to pre-configure default pairing strings for various extensions.
+- **Broad File Support**: Supports a broad built-in list of Jupytext-compatible file extensions and formats. The `jupytextSync.defaultFormats` setting allows you to pre-configure default pairing strings for various extensions.
 - **Raw Cells Support in Notebooks**:
   - Easily insert new raw cells via buttons in Notebook editor toolbar or keyboard shortcuts.
   - Toggle cells to raw format and back to default code. Keyboard shortcuts available.
@@ -125,7 +125,7 @@ You can configure the extension's behavior via VSCode settings (search for `jupy
     - `${ext}` can be used as a placeholder for the file extension (without the leading dot).
     - `default` key: An extension set to `"default"` in the configuration will inherit the format string from this key.
     - Subdirectories: Prefix with `dir_name//` (e.g., `notebooks//ipynb,scripts//py:percent`). Paths are relative to the source file's parent directory.
-  - **Activation**: Applies to file extensions recognized by your installed `jupytext`.
+  - **Activation**: Applies to file extensions supported by Jupytext Sync.
   - **Example Default Entry**: `"default": "ipynb,${ext}:percent"`
 
 - **`jupytextSync.setFormatsArgs`**:

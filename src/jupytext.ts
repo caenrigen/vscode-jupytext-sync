@@ -18,7 +18,6 @@ export type Jupytext = {
 }
 
 let jupytextInfo: Jupytext | undefined = undefined
-let supportedExtensions: string[] = EXTENSIONS
 let extensionContext: vscode.ExtensionContext | undefined = undefined
 
 const AUTO_CREATED_NOTEBOOKS_KEY = "jupytextSync.autoCreatedNotebooks"
@@ -66,23 +65,11 @@ export function unmarkNotebookAsAutoCreated(notebookUri: vscode.Uri, logPrefix: 
   }
 }
 
-export function getSupportedExtensions(): string[] {
-  return supportedExtensions
-}
-
-export function setSupportedExtensions(extensions: string[]): void {
-  supportedExtensions = extensions ?? []
-}
-
-export function resetSupportedExtensions(): void {
-  supportedExtensions = EXTENSIONS
-}
-
 export function getJupytext(): Jupytext | undefined {
   return jupytextInfo
 }
 
-export async function setJupytext(jupytext: Jupytext | undefined, showMessage: boolean = false): Promise<void> {
+export function setJupytext(jupytext: Jupytext | undefined, showMessage: boolean = false): void {
   // Prior to v1.17.3 there were several issues and bugs that did not play well with
   // this extension. Made it a requirement to simplify code.
   const vMin = "1.17.3"
@@ -100,14 +87,7 @@ export async function setJupytext(jupytext: Jupytext | undefined, showMessage: b
   jupytextInfo = jupytext // store the jupytext info for later use (or clear it)
   if (!jupytext) {
     getJConsole().appendLine("Jupytext cleared")
-    resetSupportedExtensions()
     return
-  }
-
-  // Import supported extensions from Jupytext
-  const extensions = await importJupytextFileExtensions()
-  if (extensions) {
-    setSupportedExtensions(extensions)
   }
 
   let msg = `Using Jupytext ${jupytext.jupytextVersion} via '${jupytext.executable}' `
@@ -194,28 +174,6 @@ export async function runJupytext(
         getJConsole().show()
       }
     }
-    return undefined
-  }
-}
-
-export async function importJupytextFileExtensions(): Promise<string[] | undefined> {
-  try {
-    const jupytext = getJupytext()
-    if (!jupytext) {
-      throw new Error("Jupytext not found")
-    }
-    const extensions = await runCommand([
-      jupytext.executable,
-      "-c",
-      "import sys; sys.path.remove(''); import jupytext, json; print(json.dumps(jupytext.formats.NOTEBOOK_EXTENSIONS))",
-    ])
-    const extensionsArray = JSON.parse(extensions)
-    getJConsole().appendLine(`Jupytext ${jupytext.jupytextVersion} supports: ${extensionsArray.join(", ")}`)
-    return extensionsArray
-  } catch (ex) {
-    const msg = `Failed to import Jupytext and the file extensions it supports: ${ex}`
-    console.error(msg, ex)
-    getJConsole().appendLine(msg)
     return undefined
   }
 }
@@ -362,7 +320,7 @@ export async function runJupytextSetFormats(uri: vscode.Uri, formats: string[], 
 
 export function isSupportedFile(uri: vscode.Uri): boolean {
   const ext = path.extname(uri.fsPath)
-  return supportedExtensions.includes(ext)
+  return EXTENSIONS.includes(ext)
 }
 
 export function makeLogPrefix(eventName: string): string {
@@ -732,5 +690,4 @@ export async function validatePythonAndJupytext() {
   if (!pythonPath || findAutomatically) {
     await locatePythonAndJupytext()
   }
-  await vscode.commands.executeCommand("setContext", "jupytextSync.supportedExtensions", getSupportedExtensions())
 }
