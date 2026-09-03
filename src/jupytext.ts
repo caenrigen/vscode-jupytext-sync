@@ -723,7 +723,9 @@ export async function ensurePythonAndJupytext(showFailureMessage: boolean): Prom
   if (jupytextInfo) {
     return jupytextInfo
   }
-  if (!discoveryAttempted && !discoveryPromise) {
+  // Explicit commands pass showFailureMessage=true and should retry after an earlier
+  // background discovery failure. Automatic editor events remain limited to one attempt.
+  if ((!discoveryAttempted || showFailureMessage) && !discoveryPromise) {
     discoveryPromise = validatePythonAndJupytext(false).finally(() => {
       discoveryPromise = undefined
     })
