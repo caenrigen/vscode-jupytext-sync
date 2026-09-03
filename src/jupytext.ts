@@ -1,5 +1,5 @@
 import * as vscode from "vscode"
-import {config, defaultNotebookDir, EXTENSIONS} from "./constants"
+import {config, defaultNotebookDir} from "./constants"
 import {getPythonPaths, runCommand, resolvePythonExecutable, getPythonFromConfig} from "./python"
 import {getJConsole} from "./constants"
 import * as path from "path"
@@ -182,6 +182,10 @@ export function getDefaultFormats(): Record<string, string> {
   return config().get<Record<string, string>>("defaultFormats", {})
 }
 
+export function getSupportedExtensions(): string[] {
+  return Object.keys(getDefaultFormats()).filter((key) => key.startsWith("."))
+}
+
 // Cached extra CLI args for jupytext commands
 let cachedSetFormatsCliArgs: string[] = []
 let cachedSyncCliArgs: string[] = []
@@ -320,7 +324,7 @@ export async function runJupytextSetFormats(uri: vscode.Uri, formats: string[], 
 
 export function isSupportedFile(uri: vscode.Uri): boolean {
   const ext = path.extname(uri.fsPath)
-  return EXTENSIONS.includes(ext)
+  return getSupportedExtensions().includes(ext)
 }
 
 export function makeLogPrefix(eventName: string): string {

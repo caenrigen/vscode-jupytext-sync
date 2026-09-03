@@ -16,6 +16,7 @@ import {
   makeLogPrefix,
   validatePythonAndJupytext,
   locatePythonAndJupytext,
+  getSupportedExtensions,
 } from "./jupytext"
 
 // Store disposables for event handlers so we can manage them
@@ -42,6 +43,13 @@ export async function activate(context: vscode.ExtensionContext) {
       }
       if (e.affectsConfiguration("jupytextSync.pythonExecutable")) {
         await validatePythonAndJupytext()
+      }
+      if (e.affectsConfiguration("jupytextSync.defaultFormats")) {
+        await vscode.commands.executeCommand(
+          "setContext",
+          "jupytextSync.supportedExtensions",
+          getSupportedExtensions(),
+        )
       }
     }),
   )
