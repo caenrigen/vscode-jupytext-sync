@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 1.5.0 2026-09-03
 
 - Remove the custom editor and automatic editor-association workflow. Paired notebooks can still be opened with the "Open paired Notebook" command. See https://github.com/caenrigen/vscode-jupytext-sync/issues/21 and https://github.com/caenrigen/vscode-jupytext-sync/issues/27 for bugs/limitations.
 - Derive supported filename extensions from `jupytextSync.defaultFormats` instead of querying Jupytext via Python. New extensions can be added, if Jupytext supports them.
