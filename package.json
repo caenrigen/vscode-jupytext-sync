@@ -290,7 +290,7 @@
     "commands": [
       {
         "command": "jupytextSync.showLogs",
-        "title": "Show Jupytext Sync Logs",
+        "title": "Show Logs",
         "category": "Jupytext"
       },
       {

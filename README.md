@@ -56,7 +56,7 @@ This extension solves several common annoyances and provides handy features for 
 - **Python Interpreter Flexibility**:
   - Attempts are made to automatically discover Python executables that are able to invoke Jupytext. If the Microsoft Python extension is installed ([open in VSCode](vscode:extension/ms-python.python) / [open on marketplace](https://marketplace.visualstudio.com/items?itemName=ms-python.python)), its selected interpreter and other discovered environments (e.g., `venv`, `conda`) are considered.
   - Allows you to configure a custom Python executable path for `jupytext` if needed (via the `jupytextSync.pythonExecutable` setting).
-  - You can use the "**Jupytext: Locate Python and Jupytext**" command or check the extension logs ("**Jupytext: Show Jupytext Sync Logs**" command) to see which Python environment is being used.
+  - You can use the "**Jupytext: Locate Python and Jupytext**" command or check the extension logs ("**Jupytext: Show Logs**" command) to see which Python environment is being used.
 
 ## Recommended Workflow
 
@@ -91,7 +91,7 @@ You can configure the extension's behavior via VSCode settings (search for `jupy
       - `${userHome}`: Expands to the user's home directory
       - `${env:VAR_NAME}`: Expands to the value of environment variable `VAR_NAME`
       - `${workspaceFolder}`: Expands to the workspace folder path
-  - **Tip**: Use the "**Jupytext: Show Jupytext Sync Logs**" or "**Jupytext: Locate Python and Jupytext**" commands to verify which Python executable is being used.
+  - **Tip**: Use the "**Jupytext: Show Logs**" or "**Jupytext: Locate Python and Jupytext**" commands to verify which Python executable is being used.
   - **Default**: `""` (empty string, for automatic discovery)
 
 - **`jupytextSync.deleteOnNotebookClose`**:
@@ -206,7 +206,7 @@ cell_metadata_filter = "-all"
 
 This extension provides the following commands, accessible via the Command Palette (Ctrl+Shift+P or Cmd+Shift+P) under the "Jupytext" category:
 
-- **`Jupytext: Show Jupytext Sync Logs`**: Opens the output channel for Jupytext Sync, showing logs which can be helpful for troubleshooting, especially for Python executable discovery.
+- **`Jupytext: Show Logs`**: Opens the output channel for Jupytext Sync, showing logs which can be helpful for troubleshooting, especially for Python executable discovery.
 - **`Jupytext: Locate Python and Jupytext`**: Manually triggers Python and Jupytext discovery, showing detailed information about which Python executable and Jupytext version is being used. Useful for troubleshooting environment issues.
 - **`Jupytext: Pair via Jupytext`**: Initiates the pairing process for the active file or a file selected from the Explorer. Prompts for Jupytext formats based on `jupytextSync.askFormats.onPairDocuments` and `jupytextSync.defaultFormats`.
 - **`Jupytext: Open paired Notebook via Jupytext`**: Opens the paired notebook (`.ipynb` file) corresponding to the text file (e.g., `.py`, `.md`) as a VS Code Notebook Editor. This is a key feature for working with text-based versions of notebooks. The text file must be first paired to a notebook (`Pair via Jupytext` or via Jupytext config files).
