@@ -33,3 +33,7 @@ assets/**
 
 # Developer notes
 DEVELOPER.md
+
+# Development files
+.devcontainer/**
+test/**
