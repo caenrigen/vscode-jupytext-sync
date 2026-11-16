@@ -71,6 +71,10 @@ function normalizeCmdArgs(cmdArgs: string[]) {
 }
 
 export async function runCommand(cmdArgs: string[], cwd?: string): Promise<string> {
+  // Enforce trust at the process boundary, including discovery and future config reads.
+  if (!vscode.workspace.isTrusted) {
+    throw new Error("Trust this workspace before running Python or Jupytext.")
+  }
   const [cmd, ...args] = normalizeCmdArgs(cmdArgs)
   const env: NodeJS.ProcessEnv = {
     ...process.env,

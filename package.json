@@ -52,14 +52,26 @@
     "onStartupFinished"
   ],
   "main": "./out/extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Python discovery, pairing and synchronization require a trusted workspace. Notebook cell editing remains available in Restricted Mode.",
+      "restrictedConfigurations": [
+        "jupytextSync.pythonExecutable",
+        "jupytextSync.setFormatsArgs",
+        "jupytextSync.syncArgs"
+      ]
+    }
+  },
   "contributes": {
     "configuration": {
       "title": "Jupytext Sync",
       "properties": {
         "jupytextSync.pythonExecutable": {
+          "scope": "machine",
           "type": "string",
           "default": "",
-          "markdownDescription": "The path to the Python executable used to invoke [`jupytext`](https://jupytext.readthedocs.io).\n\nJupytext Sync requires a Python executable to be installed along with the `jupytext` package.\n\n**Automatic discovery:** If not specified in your User/Workspace settings, Jupytext Sync attempts to find a Python executable that has `jupytext` installed. If you have the Microsoft Python extension installed ([open in VSCode](vscode:extension/ms-python.python) / [open on marketplace](https://marketplace.visualstudio.com/items?itemName=ms-python.python)), Jupytext will be able to detect Python virtual environments (e.g., `venv`, `conda`, `virtualenv`, etc.), besides the `python` and `python3` from your `$PATH`. If more than one Python executable is found, the one that provides the highest version of `jupytext` is selected.\nTip: If you would like to know if Jupytext Sync found your python executable(s), you can check the logs in the [_Jupytext Sync Output_](command:jupytextSync.showLogs) panel.\n\n**Manual override:** If the automatic discovery failed or you want to use a different Python executable, you can specify the path to the Python executable.\nAlternatively, you can set it to, e.g., `python3` if you want to use the `python3` from your `$PATH`. For this to work as expected, you might have to launch VSCode from terminal, otherwise `$PATH` might differ from what you are used to in the terminal. If you use a virtual python environment, you have to activate it first.\n\n**Variables:** `${workspaceFolder}` is replaced with the workspace folder path, `${userHome}` with the user's home directory, `${env:VAR_NAME}` with the value of environment variable `VAR_NAME`.",
+          "markdownDescription": "The path to the Python executable used to invoke [`jupytext`](https://jupytext.readthedocs.io).\n\nJupytext Sync requires a Python executable to be installed along with the `jupytext` package.\n\n**Automatic discovery:** If not specified in your User settings, Jupytext Sync attempts to find a Python executable that has `jupytext` installed. If you have the Microsoft Python extension installed ([open in VSCode](vscode:extension/ms-python.python) / [open on marketplace](https://marketplace.visualstudio.com/items?itemName=ms-python.python)), Jupytext will be able to detect Python virtual environments (e.g., `venv`, `conda`, `virtualenv`, etc.), besides the `python` and `python3` from your `$PATH`. If more than one Python executable is found, the one that provides the highest version of `jupytext` is selected.\nTip: If you would like to know if Jupytext Sync found your python executable(s), you can check the logs in the [_Jupytext Sync Output_](command:jupytextSync.showLogs) panel.\n\n**Manual override:** If the automatic discovery failed or you want to use a different Python executable, you can specify the path to the Python executable.\nAlternatively, you can set it to, e.g., `python3` if you want to use the `python3` from your `$PATH`. For this to work as expected, you might have to launch VSCode from terminal, otherwise `$PATH` might differ from what you are used to in the terminal. If you use a virtual python environment, you have to activate it first.\n\n**Variables:** `${workspaceFolder}` is replaced with the workspace folder path, `${userHome}` with the user's home directory, `${env:VAR_NAME}` with the value of environment variable `VAR_NAME`.",
           "order": 0
         },
         "jupytextSync.deleteOnNotebookClose": {
@@ -250,6 +262,7 @@
           "markdownDescription": "Enable or disable Jupytext menus and buttons"
         },
         "jupytextSync.setFormatsArgs": {
+          "scope": "machine",
           "type": "array",
           "order": 6,
           "items": {
@@ -262,6 +275,7 @@
           "markdownDescription": "Command-line arguments of `jupytext --set-formats` invocation (e.g., `--set-formats, --some-flag`). The order is preserved. Formats are inserted after the `--set-formats` flag (if present)."
         },
         "jupytextSync.syncArgs": {
+          "scope": "machine",
           "type": "array",
           "order": 7,
           "items": {
@@ -283,11 +297,13 @@
       },
       {
         "command": "jupytextSync.locatePythonAndJupytext",
+        "enablement": "isWorkspaceTrusted",
         "title": "Locate Python and Jupytext",
         "category": "Jupytext"
       },
       {
         "command": "jupytextSync.pair",
+        "enablement": "isWorkspaceTrusted",
         "title": "Pair via Jupytext",
         "shortTitle": "Pair",
         "category": "Jupytext",
@@ -295,6 +311,7 @@
       },
       {
         "command": "jupytextSync.openPairedNotebook",
+        "enablement": "isWorkspaceTrusted",
         "title": "Open paired Notebook via Jupytext",
         "shortTitle": "Open paired Notebook",
         "category": "Jupytext",
@@ -445,7 +462,8 @@
     "precompile": "yarn run clean",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "yarn run lint --fix && yarn run compile",
+    "pretest": "yarn run lint && yarn run compile",
+    "test": "node --test test/*.test.cjs",
     "lint": "eslint src",
     "ide": "cursor",
     "vsix:build": "yarn pretest && yarn vsce package -o jupytext-sync.vsix",
