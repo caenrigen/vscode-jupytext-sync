@@ -33,3 +33,8 @@ assets/**
 
 # Developer notes
 DEVELOPER.md
+
+# Development and CI
+.devcontainer/**
+.github/**
+test/**

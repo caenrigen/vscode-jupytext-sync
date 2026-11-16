@@ -661,6 +661,9 @@ export async function pickJupytext(): Promise<Jupytext | undefined> {
 }
 
 export async function locatePythonAndJupytext() {
+  if (!vscode.workspace.isTrusted) {
+    return
+  }
   getJConsole().appendLine("Starting Python and Jupytext discovery...")
   const jupytext = await pickJupytext()
   discoveryAttempted = true
@@ -684,6 +687,9 @@ export async function locatePythonAndJupytext() {
 }
 
 export async function validatePythonAndJupytext(showMessages: boolean = true): Promise<Jupytext | undefined> {
+  if (!vscode.workspace.isTrusted) {
+    return
+  }
   discoveryAttempted = true
   setJupytext(undefined, false) // reset runtime jupytext
   let pythonPath = getPythonFromConfig()
@@ -720,6 +726,9 @@ export async function validatePythonAndJupytext(showMessages: boolean = true): P
 }
 
 export async function ensurePythonAndJupytext(showFailureMessage: boolean): Promise<Jupytext | undefined> {
+  if (!vscode.workspace.isTrusted) {
+    return
+  }
   if (jupytextInfo) {
     return jupytextInfo
   }
